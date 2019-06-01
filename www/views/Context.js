@@ -4,7 +4,7 @@ var ContextView = function (name) {
     this.html = 'views/Context.html'
     this.stateBinds = ['authLevel', 'editMode']
     this.isActive = false
-    this.building = false
+    // this.building = false
 }
 
 ContextView.prototype.onShow = function () {
@@ -35,7 +35,6 @@ ContextView.prototype.showTagWindow = function (projIndex) {
         tagWindowShowing: true,
         buildProject: proj.name,
         buildProjectIndex: projIndex,
-        building: false,
         tags: ['master'],
     })
     this.refreshTags(proj.name, false)
@@ -54,16 +53,16 @@ ContextView.prototype.refreshTags = function (projectName, clean) {
     })
 }
 
-ContextView.prototype.build = function (projIndex) {
+ContextView.prototype.build = function (projIndex, tag) {
     var proj = this.data.projects[projIndex]
     var that = this
-    var ws = new WebSocket('ws://' + location.host + '/ws-build/' + that.name + '/' + proj.name + '?token=' + proj.token);
+    var ws = new WebSocket('ws://' + location.host + '/ws-build/' + that.name + '/' + proj.name + '/' + tag + '?token=' + proj.token);
     ws.onmessage = function (evt) {
         that.output(evt.data)
     };
-    ws.onclose = function () {
-        this.data.building = false
-    };
+    // ws.onclose = function () {
+    //     this.building = false
+    // };
 }
 
 ContextView.prototype.output = function (str) {
@@ -109,7 +108,7 @@ ContextView.prototype.clickMonth = function (projectName, month) {
     this.setData({currentMonth: month})
     this.$('.dropdown').className = 'dropdown'
     var that = this
-    http.get('/histories/' + this.name + '/' + projectName + '/'+month).then(function (data) {
+    http.get('/histories/' + this.name + '/' + projectName + '/' + month).then(function (data) {
         that.setData({histories: data})
         if (data.length > 0) {
             that.showBuild(projectName, data[0])
