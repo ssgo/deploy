@@ -1,0 +1,26 @@
+build:
+  - from: local
+    save:
+      - dist
+    cache:
+      - cache
+    script:
+      - echo -n "*" >> cache/stars
+      - test "$(cat stars)" = "*"
+      - cp cache/stars dist/stars
+
+  - from: local
+    save:
+      - dist
+    cache:
+      - cache
+    script:
+      - echo -n "**" >> cache/stars
+      - test "$(cat stars)" = "***"
+      - cp cache/stars dist/stars
+
+deploy:
+  from: local
+  script:
+    - cp dist/stars dist/stars2
+    - echo -n "***" >> cache/stars2

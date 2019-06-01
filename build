@@ -1,0 +1,19 @@
+#!/bin/bash
+
+rm -rf dist
+mkdir -p dist
+
+export CGO_ENABLED=0
+export GOOS=linux
+export GOARCH=amd64
+go build -ldflags '-w' -o dist/server start.go
+
+cp *.yml dist/
+cp -r www dist/
+
+ssh root@192.168.0.61 "/opt/deploy/server stop"
+
+ssh root@192.168.0.61 'mkdir -p /opt/deploy'
+scp -r dist/* root@192.168.0.61:/opt/deploy/
+
+ssh root@192.168.0.61 "/opt/deploy/server start"

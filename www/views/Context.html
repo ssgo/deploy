@@ -1,0 +1,212 @@
+<div if="data.authLevel>=2" class="saveBox">
+	<button if="data.changed" class="btn btn-primary" onclick="$this.save();">Save</button>
+</div>
+
+<div class="fullBox">
+
+	<h3 class="sub-header">Projects<span class="text-muted" style="font-size:14px;margin-left:10px"></span>
+	</h3>
+	<div class="table-responsive">
+		<table class="table table-condensed table-hover">
+			<thead>
+			<tr>
+				<th width="15%">Name</th>
+				<th>Repository</th>
+				<!--th width="10%">Tag</th-->
+				<th width="15%">Deploy Token</th>
+				<th width="15%">Desc</th>
+				<th width="5%">Script</th>
+				<th width="5%">Tags</th>
+				<th width="5%">Builds</th>
+			</tr>
+			</thead>
+			<tbody each="data.projects">
+			<tr class="{item.changed&&'danger'}" align="center">
+				<td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Name" bind="item.name"
+						   onbind="$this.check(event, 'projects',{index})">
+					<span class="text-muted" if="!data.editMode">{item.name}</span>
+				</td>
+				<td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Repository"
+						   bind="item.repository"
+						   onbind="$this.check(event, 'projects',{index})">
+					<span class="text-muted" if="!data.editMode">{item.repository}</span>
+				</td>
+				<!--td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Tag" bind="item.tag"
+						   onbind="$this.check(event, 'projects',{index})">
+					<span class="text-muted" if="!data.editMode">{item.tag}</span>
+				</td-->
+				<td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Token" bind="item.token"
+						   onbind="$this.check(event, 'projects',{index})">
+					<span class="text-muted" if="!data.editMode">{item.token}</span>
+				</td>
+				<td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Desc" bind="item.desc"
+						   onbind="$this.check(event, 'projects',{index})">
+					<span class="text-muted" if="!data.editMode">{item.desc}</span>
+				</td>
+				<td>
+					<a href="javascript:$this.showCIWindow('{item.name}', true);" class="glyphicon glyphicon-pencil"
+					   style="cursor: pointer;line-height: 23px;"
+					   if="item.name && data.authLevel>=2"></a>
+					<a href="javascript:$this.showCIWindow('{item.name}', false);" class="glyphicon glyphicon-eye-open"
+					   style="cursor: pointer;line-height: 23px"
+					   if="item.name && data.authLevel<2"></a>
+				</td>
+				<td>
+					<a href="javascript:$this.showTagWindow('{index}', true);" class="glyphicon glyphicon-tags"
+					   style="cursor: pointer;line-height: 23px;"
+					   if="item.name && data.authLevel>=2"></a>
+					<a href="javascript:$this.showTagWindow('{index}', false);" class="glyphicon glyphicon-tags"
+					   style="cursor: pointer;line-height: 23px"
+					   if="item.name && data.authLevel<2"></a>
+				</td>
+				<td>
+					<a href="javascript:$this.showHistoryWindow('{item.name}');" class="glyphicon glyphicon-time"
+					   style="cursor: pointer;line-height: 23px"
+					   if="item.name"></a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3 class="sub-header">Vars<span class="text-muted" style="font-size:14px;margin-left:10px"></span>
+	</h3>
+	<div class="table-responsive">
+		<table class="table table-condensed table-hover">
+			<thead>
+			<tr>
+				<th width="30%">Key</th>
+				<th>Value</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr each="data.vars" class="{item.changed&&'danger'}">
+				<td>
+					<input if="data.editMode" type="text" class="form-control" placeholder="Name" bind="item.name"
+						   onbind="$this.check(event, 'vars',{index})">
+					<span class="text-muted" if="!data.editMode">{item.name}</span>
+				</td>
+				<td>
+                    <textarea if="data.editMode" style="width:100%;height:{item.value.indexOf('\n')===-1?30:100}px"
+							  bind="item.value"
+							  onbind="$this.check(event, 'vars',{index})"></textarea>
+					<span class="text-muted" if="!data.editMode">{item.value}</span>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3 class="sub-header">Manage Token</h3>
+	<div style="padding:5px">
+		<input if="data.editMode" style="width:100%;height:30px" bind="data.token"
+			   onBind="$this.setData({changed: true})"></input>
+		<span if="!data.editMode">{data.token}</span>
+	</div>
+
+	<h3 class="sub-header">Memo</h3>
+	<div style="padding:5px">
+        <textarea if="data.editMode" style="width:100%;height:80px" bind="data.desc"
+				  onBind="$this.setData({changed: true})"></textarea>
+		<span if="!data.editMode">{data.desc}</span>
+	</div>
+
+	<div align="center">
+		<br/>
+		<button if="data.editMode" class="btn btn-danger" onclick="$this.remove();">Remove</button>
+		<br/>
+	</div>
+</div>
+
+<style>
+	.editor {
+		display: block;
+		flex: 1;
+		text-align: left;
+		margin-bottom: 10px;
+		padding: 10px;
+		color: #ec6141;
+	}
+
+</style>
+<div class="fullBox" if="data.ciWindowShowing" style="background:rgba(0,0,0,0.5);top:0px;z-index:2000">
+	<div class="panel panel-default fullBox" style="top:0;margin: 50px; display: flex; flex-direction: column">
+		<div class="panel-heading">
+			<h4 class="panel-title" style="display: inline-block">CI for project "{data.ciProject}"</h4>
+			<a target="_blank" href="https://github.com/ssgo/deploy/wiki/CI-Sample" style="float: right"> >> Sample</a>
+		</div>
+		<div class="panel-body" style="display: flex;flex: 1;height: 100%;flex-direction: column">
+			<textarea bind="data.ci" class="form-control editor" readonly if="data.ciReadonly"></textarea>
+			<textarea bind="data.ci" class="form-control editor" if="!data.ciReadonly"></textarea>
+			<div align="center" style="height: 30px">
+				<button onclick="$this.formatCI()" class="btn btn-default" style="width:100px;float: left">Format
+				</button>
+				<button onclick="$this.saveCI()" class="btn btn-primary" style="width:100px;"
+						if="data.ciReadonly!=true">
+					OK
+				</button>
+				<button onclick="$this.hideCIWindow()" class="btn btn-default" style="width:100px;">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div if="data.tagWindowShowing"
+	 style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;background:rgba(0,0,0,0.5);z-index:2000">
+	<div style="position: absolute;top: 50px;bottom: 50px;left: 50px;right: 50px;background: #fff;border: 1px solid #eee;border-radius: 10px;">
+		<ul class="list-group"
+			style="position: absolute;top: 10px;bottom: 80px;left: 10px;width: 160px;overflow: hidden;overflow-y: auto;margin: 0;">
+			<li each="data.tags" class="list-group-item">{item}<a
+						href="javascript:$this.build('{data.buildProjectIndex}', '{item}');"
+						class="glyphicon glyphicon-play"
+						style="float: right"></a></li>
+		</ul>
+		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', true)"
+				style="position: absolute;bottom: 50px;left: 10px;width: 160px;height: 30px"><span
+					class="glyphicon glyphicon-refresh "></span> Refresh Tags
+		</button>
+		<div style="position: absolute;top: 10px;bottom: 50px;left: 180px;right: 10px;">
+					<textarea class="buildOutput" readonly
+							  style="width: 100%;height: 100%;background: #333333; color: #ec971f;"></textarea>
+
+		</div>
+		<div align="center" style="position: absolute;bottom: 10px;left: 0;right: 0;height: 30px">
+			<button onclick="$this.hideTagWindow()" class="btn btn-default" style="width:100px;">Close</button>
+		</div>
+	</div>
+</div>
+
+<div if="data.historyWindowShowing"
+	 style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;background:rgba(0,0,0,0.5);z-index:2000">
+	<div style="position: absolute;top: 50px;bottom: 50px;left: 50px;right: 50px;background: #fff;border: 1px solid #eee;border-radius: 10px;">
+		<div class="dropdown" style="position: absolute;top: 10px;left: 10px;width: 190px;">
+			<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown"
+					onclick="$this.toggleMonthMenu()" style="width: 100%"
+					aria-haspopup="true" aria-expanded="true">
+				{data.currentMonth} <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" style="top:40px; left: 10px;">
+				<li each="data.buildMonths" onclick="$this.clickMonth('{data.currentProjectName}', '{item}')"><a href="#">{item}</a></li>
+			</ul>
+		</div>
+		<ul class="list-group historiesList"
+			style="position: absolute;top: 50px;bottom: 50px;left: 10px;width: 190px;overflow: hidden;overflow-y: auto;margin: 0;">
+			<li each="data.histories" class="list-group-item {data.currentBuild===item?'active':''}"
+				style="color:{item[20]==='S'?'#090':'#f22'};cursor: pointer"
+				onclick="$this.showBuild('{data.currentProjectName}','{item}');">{item.substr(0,19)}
+				<span class="glyphicon glyphicon-menu-right" style="float: right"></span>
+			</li>
+		</ul>
+		<div style="position: absolute;top: 10px;bottom: 50px;left: 210px;right: 10px;">
+			<textarea readonly style="width: 100%;height: 100%;background: #333333; color: #ec971f;">{data.currentHistory}</textarea>
+		</div>
+		<div align="center" style="position: absolute;bottom: 10px;left: 0;right: 0;height: 30px">
+			<button onclick="$this.hideHistoryWindow()" class="btn btn-default" style="width:100px;">Close</button>
+		</div>
+	</div>
+</div>
