@@ -280,6 +280,8 @@ func build(in struct {
 	//	return
 	//}
 
+	vars["BUILD_PATH"] = buildPath
+
 	lock(proj.Repository)
 	gitPath := checkout(proj.Repository, in.Tag, true, false)
 	err := der.Run("cp", "-r", gitPath, buildPath)

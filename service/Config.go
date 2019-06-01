@@ -23,7 +23,6 @@ var reservedWords = map[string]bool{
 	"contexts": true,
 	"projects": true,
 	"reg":      true,
-	"deploy":   true,
 }
 
 func dataPath(names ...string) string {
