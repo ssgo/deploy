@@ -80,7 +80,9 @@ func auth(authLevel int, url *string, in *map[string]interface{}, request *http.
 	switch authLevel {
 	//case VIEW:
 	//	return allowAccess(&token) || allowManage(&token) || allowContext(&token, (*in)["contextName"])
-	case VIEW, CONTEXT:
+	case VIEW:
+		return allowManage(&token) || allowAnyContext(&token)
+	case CONTEXT:
 		return allowManage(&token) || allowContext(&token, (*in)["contextName"])
 	case MANAGE:
 		return allowManage(&token)
@@ -99,6 +101,17 @@ func auth(authLevel int, url *string, in *map[string]interface{}, request *http.
 
 func allowManage(token *string) bool {
 	return *token != "" && *token == _config.encodedManageToken
+}
+
+func allowAnyContext(token *string) bool {
+	if ctxs, _ := loadContexts(""); len(ctxs) > 0 {
+		for _, ctxName := range ctxs {
+			if allowContext(token, ctxName) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func allowContext(token *string, contextName interface{}) bool {

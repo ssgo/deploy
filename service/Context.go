@@ -5,7 +5,9 @@ import (
 	"github.com/ssgo/log"
 	"github.com/ssgo/u"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -18,8 +20,12 @@ type ContextInfo struct {
 	Token    string
 }
 
-func getContexts(logger *log.Logger) []string {
-	out, err := loadContexts("")
+func getContexts(request *http.Request, logger *log.Logger) []string {
+	token := ""
+	if request.Header.Get("Access-Token") != _config.encodedManageToken {
+		token = request.Header.Get("Access-Token")
+	}
+	out, err := loadContexts(token)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -147,26 +153,26 @@ func checkout(repository, tag string, pull bool, clean bool) string {
 		_ = os.RemoveAll(gitPath)
 	}
 	err := os.MkdirAll(gitPath, 0700)
-	if err == nil {
-		err = os.Chdir(gitPath)
-	}
+	//if err == nil {
+	//	err = os.Chdir(gitPath)
+	//}
 	if err != nil {
 		logger.Error(err.Error())
 		return ""
 	}
 
-	if u.FileExists(".git") {
+	if u.FileExists(path.Join(gitPath, ".git")) {
 		logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "checkout", tag)
+		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
 		if pull {
 			logger.Info("git pull", "repository", repository, "tag", tag)
-			_, err = u.RunCommand("git", "pull")
+			_, err = u.RunCommand("git", "-C", gitPath, "pull")
 		}
 	} else {
 		logger.Info("git clone "+repository+" .", "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "clone", repository, ".")
+		_, err = u.RunCommand("git", "-C", gitPath, "clone", repository, ".")
 		logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "checkout", tag)
+		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
 	}
 	if err != nil {
 		logger.Error(err.Error())

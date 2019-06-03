@@ -14,7 +14,7 @@
 				<th>Repository</th>
 				<!--th width="10%">Tag</th-->
 				<th width="15%">Deploy Token</th>
-				<th width="15%">Desc</th>
+				<th width="15%">Memo</th>
 				<th width="5%">Script</th>
 				<th width="5%">Tags</th>
 				<th width="5%">Builds</th>
@@ -44,7 +44,7 @@
 					<span class="text-muted" if="!data.editMode">{item.token}</span>
 				</td>
 				<td>
-					<input if="data.editMode" type="text" class="form-control" placeholder="Desc" bind="item.desc"
+					<input if="data.editMode" type="text" class="form-control" placeholder="Memo" bind="item.desc"
 						   onbind="$this.check(event, 'projects',{index})">
 					<span class="text-muted" if="!data.editMode">{item.desc}</span>
 				</td>

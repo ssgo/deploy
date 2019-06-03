@@ -77,7 +77,7 @@ build:
      - mkdir -p cache
      - cp abc.txt dist/
      - echo -n "$globalTitle" >> cache/stars
-     - echo "$(cat cache/stars)" = $check1
+     - echo $(cat cache/stars) = $check1
      - test "$(cat cache/stars)" = $check1
      - cp cache/stars dist/stars
 
@@ -143,6 +143,9 @@ func TestDeploy(t *testing.T) {
 	r = cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1", as2.Addr), "Access-Token", service.EncodeToken("C1TTT"))
 	reader = bufio.NewReader(r.Response.Body)
 	lastLine = ""
+	//r := cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1", as2.Addr), "Access-Token", service.EncodeToken("C1TTT"))
+	//reader := bufio.NewReader(r.Response.Body)
+	//lastLine := ""
 	for {
 		lineBuf, _, err := reader.ReadLine()
 		if err != nil {

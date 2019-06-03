@@ -273,6 +273,7 @@ func build(in struct {
 	// 初始化 build 目录
 	buildId := u.UniqueId()
 	buildPath := dataPath("_builders", buildId)
+	u.CheckPath(buildPath)
 	//der.Info("# mkdir -p", buildPath)
 	//err := os.MkdirAll(buildPath, 0700)
 	//if err != nil {
@@ -281,7 +282,6 @@ func build(in struct {
 	//}
 
 	vars["BUILD_PATH"] = buildPath
-
 	lock(proj.Repository)
 	gitPath := checkout(proj.Repository, in.Tag, true, false)
 	err := der.Run("cp", "-r", gitPath, buildPath)
@@ -314,12 +314,14 @@ func build(in struct {
 			} else {
 				cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
 			}
-			if u.FileExists(cachedPath) {
-				if u.FileExists(cachePath) {
-					_ = os.RemoveAll(cachePath)
-				}
-				_ = der.Run("cp", "-r", cachedPath, cachePath)
+			if !u.FileExists(cachedPath) {
+				_ = os.MkdirAll(cachedPath, 0700)
 			}
+			if u.FileExists(cachePath) {
+				_ = os.RemoveAll(cachePath)
+			}
+			_ = der.Run("ln", "-s", cachedPath, cachePath)
+			//_ = der.Run("cp", "-r", cachedPath, cachePath)
 		}
 	}
 
@@ -329,26 +331,26 @@ func build(in struct {
 	}
 
 	defer func() {
-		if ci.Cache != "" {
-			caches := strings.Split(ci.Cache, " ")
-			for _, cachePath := range caches {
-				if len(cachePath) == 0 {
-					continue
-				}
-				var cachedPath string
-				if cachePath[0] != '/' {
-					cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
-					cachePath = fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, cachePath)
-				} else {
-					cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
-				}
-				if u.FileExists(cachePath) {
-					_ = os.RemoveAll(cachedPath)
-					u.CheckPath(cachedPath)
-					_ = der.Run("cp", "-r", cachePath, cachedPath)
-				}
-			}
-		}
+		//if ci.Cache != "" {
+		//	caches := strings.Split(ci.Cache, " ")
+		//	for _, cachePath := range caches {
+		//		if len(cachePath) == 0 {
+		//			continue
+		//		}
+		//		var cachedPath string
+		//		if cachePath[0] != '/' {
+		//			cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
+		//			cachePath = fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, cachePath)
+		//		} else {
+		//			cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
+		//		}
+		//		if u.FileExists(cachePath) {
+		//			_ = os.RemoveAll(cachedPath)
+		//			u.CheckPath(cachedPath)
+		//			_ = der.Run("cp", "-r", cachePath, cachedPath)
+		//		}
+		//	}
+		//}
 		_ = os.RemoveAll(buildPath)
 	}()
 
