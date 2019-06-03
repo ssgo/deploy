@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -277,18 +278,30 @@ func build(in struct {
 	// 初始化 build 目录
 	buildId := u.UniqueId()
 	buildPath := dataPath("_builders", buildId)
-	u.CheckPath(buildPath)
-	//der.Info("# mkdir -p", buildPath)
-	//err := os.MkdirAll(buildPath, 0700)
-	//if err != nil {
-	//	der.Error(err.Error())
-	//	return
-	//}
+	//u.CheckPath(buildPath)
+	der.Info("# mkdir -p", buildPath)
+	err := os.MkdirAll(buildPath, 0700)
+	if err != nil {
+		der.Error(err.Error())
+		return
+	}
 
 	vars["BUILD_PATH"] = buildPath
 	lock(proj.Repository)
 	gitPath := checkout(proj.Repository, in.Tag, true, false)
-	err := der.Run("cp", "-r", gitPath, buildPath)
+	der.Info("cp -r " + gitPath + "/* " + buildPath)
+	//err = der.Run("cp", "-r", path.Join(gitPath, "/*"), buildPath)
+	// exec.Command not support cp -r xxx/* xxxx
+	files, err := ioutil.ReadDir(gitPath)
+	if err == nil {
+		for _, file := range files {
+			fileName := file.Name()
+			if fileName == "." || fileName == ".." || fileName == ".git" {
+				continue
+			}
+			SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
+		}
+	}
 	unlock(proj.Repository)
 	if err != nil {
 		return
@@ -379,7 +392,7 @@ func build(in struct {
 			}
 		} else {
 			// 从Docker构建
-			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile) {
+			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches")) {
 				return
 			}
 		}
@@ -387,8 +400,10 @@ func build(in struct {
 	}
 
 	// zoneinfo for alpine
-	if u.FileExists("/usr/share/zoneinfo") {
-		_ = der.Run("cp", "-r", "/usr/share/zoneinfo", buildPath)
+	if len(ci.Deploy) > 0 {
+		if u.FileExists("/usr/share/zoneinfo") {
+			_ = der.Run("cp", "-r", "/usr/share/zoneinfo", buildPath)
+		}
 	}
 
 	// 部署
@@ -428,7 +443,7 @@ func build(in struct {
 			//if der.Run("docker", args...) != nil {
 			//	return
 			//}
-			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile) {
+			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile, dataPath("_caches")) {
 				return
 			}
 		}
@@ -587,8 +602,8 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 	return true
 }
 
-func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile string) bool {
-	args := append(make([]string, 0), "run", "--rm", "-v", "/opt/deploy:/opt/deploy", "-v", buildPath+":/opt/build")
+func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string) bool {
+	args := append(make([]string, 0), "run", "--rm", "-v", cachesPath+":"+cachesPath, "-v", buildPath+":/opt/build")
 	froms := praseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
@@ -606,6 +621,10 @@ func makeArgs(baseArgs []string, newArgs ...string) []string {
 }
 
 func (der *Deployer) Output(str string) {
+	if strings.Index(str, "ignoring symlink") != -1 {
+		return
+	}
+
 	der.outs = append(der.outs, str)
 
 	var err error
