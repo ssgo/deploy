@@ -53,7 +53,11 @@ func getTags(in struct {
 	}
 
 	if gitPath != "" && len(outTags) > 0 {
-		outTags = append(outTags, gitTags...)
+		routs := make([]string, 0)
+		for j := len(gitTags) - 1; j >= 0; j-- {
+			routs = append(routs, gitTags[j])
+		}
+		outTags = append(outTags, routs...)
 	}
 
 	return outTags
