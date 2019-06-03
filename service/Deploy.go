@@ -452,7 +452,7 @@ func build(in struct {
 
 func (der *Deployer) makeDockerBuildFile(buildScript string) string {
 	// 创建脚本
-	scripts := "cd /opt\n$(sh _getShell.sh) " + buildScript
+	scripts := "cd /opt/build\n$(sh _getShell.sh) " + buildScript
 	err := u.WriteFile("_dockerBuild.sh", scripts)
 	if err != nil {
 		der.Error(err.Error())
@@ -588,12 +588,12 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 }
 
 func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile string) bool {
-	args := append(make([]string, 0), "run", "--rm", "-v", buildPath+":/opt")
+	args := append(make([]string, 0), "run", "--rm", "-v", "/opt/deploy:/opt/deploy", "-v", buildPath+":/opt/build")
 	froms := praseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
 	}
-	args = append(args, froms[0], "sh", "/opt/"+dockerBuildFile)
+	args = append(args, froms[0], "sh", "/opt/build/"+dockerBuildFile)
 	if der.Run("docker", args...) != nil {
 		return false
 	}
