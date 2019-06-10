@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/ssgo/log"
+	"github.com/ssgo/s"
 	"github.com/ssgo/u"
 	"io/ioutil"
 	"os"
@@ -34,6 +35,19 @@ func setGlobalInfo(in GlobalInfo, logger *log.Logger) bool {
 	if err == nil {
 		ok = true
 		err = u.Save(archivedGlobalFile(), &in)
+	}
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	return ok
+}
+
+func setSSKeys(in s.Map, logger *log.Logger) bool {
+	err := u.Save(sskeysFile(), in)
+	ok := false
+	if err == nil {
+		ok = true
+		err = u.Save(archivedSSKeysFile(), in)
 	}
 	if err != nil {
 		logger.Error(err.Error())
@@ -105,7 +119,16 @@ func globalFile() string {
 	return dataPath("_global")
 }
 
+func sskeysFile() string {
+	return dataPath("_sskeys")
+}
+
 func archivedGlobalFile() string {
 	t := time.Now()
 	return dataPath("_archived", "_global", fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
+}
+
+func archivedSSKeysFile() string {
+	t := time.Now()
+	return dataPath("_archived", "_sskeys", fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
 }

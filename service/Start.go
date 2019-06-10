@@ -5,6 +5,8 @@ import (
 	"github.com/ssgo/s"
 	"github.com/ssgo/u"
 	"net/http"
+	"os"
+	"path"
 	"time"
 )
 
@@ -16,13 +18,20 @@ const (
 	DEPLOY  = 8
 )
 
+var WorkPath = ""
+
 func Init() {
+	WorkPath = path.Dir(os.Args[0])
+
 	s.SetAuthChecker(auth)
 	s.Static("/", "www/")
 	s.Restful(GUEST, "POST", "/login", login)
 
 	s.Restful(VIEW, "GET", "/global", getGlobalInfo)
-	s.Restful(CONTEXT, "POST", "/global", setGlobalInfo)
+	s.Restful(MANAGE, "POST", "/global", setGlobalInfo)
+
+	s.Restful(MANAGE, "POST", "/sskeys", setSSKeys)
+
 	s.Restful(VIEW, "GET", "/caches", getCacheList)
 	s.Restful(MANAGE, "DELETE", "/cache/{cacheName}", removeCache)
 

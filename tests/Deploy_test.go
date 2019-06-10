@@ -9,12 +9,14 @@ import (
 	"github.com/ssgo/s"
 	"github.com/ssgo/u"
 	"os"
+	"path"
 	"strings"
 	"testing"
 )
 
 var as2 *s.AsyncServer
 var deployDataPath = os.TempDir() + "data2"
+var decryptorFile = ""
 
 func TestDeployStart(t *testing.T) {
 	_ = os.RemoveAll(deployDataPath)
@@ -24,10 +26,16 @@ func TestDeployStart(t *testing.T) {
 	config.ResetConfigEnv()
 
 	service.Init()
+	service.WorkPath = "/Volumes/Star/com.isstar/ssgo/deploy"
 	as2 = s.AsyncStart()
 }
 
 func TestInitCI(t *testing.T) {
+	_ = os.Setenv("CGO_ENABLED", "0")
+	_, _ = u.RunCommand("go", "build", "-o", "../.decryptor", "../decryptor/decryptor.go")
+	wd, _ := os.Getwd()
+	decryptorFile = path.Dir(wd) + "/.decryptor"
+
 	g1Path := fmt.Sprintf("%s%c_g1", deployDataPath, os.PathSeparator)
 	_ = os.MkdirAll(g1Path, 0700)
 	_ = os.Chdir(g1Path)
@@ -45,6 +53,10 @@ func TestInitCI(t *testing.T) {
 			"flag":        "!",
 			"warpVar":     "aaa\nbbb",
 		},
+	}, "Access-Token", service.EncodeToken("91deploy"))
+
+	_ = as2.Post("/sskeys", s.Map{
+		"aaa": "EpUwhuhSi+EfUCteh/uNVQrlqy0sYrLALHqmRnqTSg/pgISDYRrz/tAsihDKFigZPhWj3KS6gsf3HHcWQm4TKs59lJmOK9tn1KEm9y/aR29GCWlO/aqW5b31yw89m42X6c/zUXhfIBWgodHYpARW5g==",
 	}, "Access-Token", service.EncodeToken("91deploy"))
 
 	_ = as2.Post("/context/c1", service.ContextInfo{
@@ -76,6 +88,7 @@ build:
      - mkdir -p dist
      - mkdir -p cache
      - cp abc.txt dist/
+     - sskey-go:aaa echo 'go build'
      - echo -n "$globalTitle" >> cache/stars
      - echo $(cat cache/stars) = $check1
      - test "$(cat cache/stars)" = $check1

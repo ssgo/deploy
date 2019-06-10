@@ -25,6 +25,18 @@ var reservedWords = map[string]bool{
 	"reg":      true,
 }
 
+var settedKey = []byte("?GQ$0K0GgLdO=f+~L68PLm$uhKr4'=tV")
+var settedIv = []byte("VFs7@sK61cj^f?HZ")
+var keysSetted = false
+
+func SetEncryptKeys(key, iv []byte) {
+	if !keysSetted {
+		keysSetted = true
+		settedKey = key
+		settedIv = iv
+	}
+}
+
 func dataPath(names ...string) string {
 	return fmt.Sprintf("%s%c%s", _config.DataPath, os.PathSeparator, strings.Join(names, string(os.PathSeparator)))
 }

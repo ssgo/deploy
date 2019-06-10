@@ -9,6 +9,10 @@ type CC struct {
 	HttpVersion int
 }
 
+func setSSKey(key, iv []byte) {
+	service.SetEncryptKeys(key, iv)
+}
+
 func main() {
 	service.Init()
 	s.Start()

@@ -1,10 +1,12 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/ssgo/log"
 	"github.com/ssgo/s"
+	"github.com/ssgo/tool/sskey/sskeylib"
 	"github.com/ssgo/u"
 	"io"
 	"io/ioutil"
@@ -148,35 +150,6 @@ func update(in struct {
 	return gitPath != ""
 }
 
-//func clean(in struct{ ContextName, ProjectName, Tag string }, logger *log.Logger) bool {
-//	_, _, ci := loadDeployInfo(in.ContextName, in.ProjectName, in.Tag, logger)
-//
-//	ok := true
-//	if ci.Cache != "" {
-//		caches := strings.Split(ci.Cache, " ")
-//		for _, cachePath := range caches {
-//			if len(cachePath) == 0 {
-//				continue
-//			}
-//			var cachedPath string
-//			if cachePath[0] != '/' {
-//				cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
-//			} else {
-//				cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
-//			}
-//			if u.FileExists(cachedPath) {
-//				err := os.RemoveAll(cachedPath)
-//				if err != nil {
-//					logger.Error(err.Error())
-//					ok = false
-//				}
-//			}
-//		}
-//	}
-//
-//	return ok
-//}
-
 func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (map[string]string, *ProjectInfo, *CI) {
 	ctx, proj := loadProject(contextName, projectName, logger)
 	if ctx == nil || proj == nil {
@@ -285,6 +258,10 @@ func build(in struct {
 		der.Error(err.Error())
 		return
 	}
+
+	_ = os.Chdir(WorkPath)
+	SimpleRun("cp", ".decryptor", buildPath)
+	SimpleRun("chmod", "+x", path.Join(buildPath, ".decryptor"))
 
 	vars["BUILD_PATH"] = buildPath
 	lock(proj.Repository)
@@ -438,7 +415,7 @@ func build(in struct {
 		} else {
 			// 从Docker构建
 			//args := append(make([]string, 0), "run", "--rm", "-v", buildPath+":/opt")
-			//args = append(args, praseCommandArgs(d.From)...)
+			//args = append(args, PraseCommandArgs(d.From)...)
 			//args = append(args, "sh", "/opt/"+dockerBuildFile)
 			//if der.Run("docker", args...) != nil {
 			//	return
@@ -483,6 +460,8 @@ if [ -f /bin/bash ]; then
         echo /bin/bash
 elif [ -f /bin/ash ]; then
         echo /bin/ash
+elif [ -f /bin/zsh ]; then
+        echo /bin/zsh
 else
         echo /bin/sh
 fi
@@ -525,8 +504,89 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 			}
 		}
 
-		scripts = append(scripts, "echo '$ "+strings.ReplaceAll(printLine, "'", "\\\\'")+"'")
-		scripts = append(scripts, line+" || exit -1")
+		sskeyFile := ""
+		if strings.HasPrefix(line, "sskey-") {
+			pos := strings.IndexByte(line, ' ')
+			if pos >= 0 {
+				langName := line[6:pos]
+				line = line[pos+1:]
+
+				if strings.Index(line, "cp ") != -1 || strings.Index(line, "mv ") != -1 {
+					der.Error("not allow to use cp、scp、mv with sskey")
+					return ""
+				}
+
+				sskeyInfo := strings.Split(langName, ":")
+				keyName := ""
+				if len(sskeyInfo) > 1 {
+					langName = sskeyInfo[0]
+					keyName = sskeyInfo[1]
+				}
+				if len(sskeyInfo) > 2 {
+					sskeyFile = sskeyInfo[2]
+				}
+
+				if sskeyFile == "" || sskeyFile[len(sskeyFile)-1] == '/' {
+					switch langName {
+					case "go":
+						sskeyFile += u.UniqueId() + ".go"
+					case "php":
+						sskeyFile += "sskeyStarter.php"
+					case "java":
+						sskeyFile += "SSKeyStarter.java"
+					}
+				}
+
+				if sskeyFile != "" {
+					sskeys := map[string]string{}
+					err := u.Load(sskeysFile(), &sskeys)
+					if err == nil {
+						if sskeys[keyName] == "" {
+							err = errors.New("sskey not exists: " + keyName)
+						}
+
+						if err == nil {
+							keyData := u.DecryptAes(sskeys[keyName], settedKey, settedIv)
+							if len(keyData) < 80 {
+								err = errors.New("sskey not valid: " + keyName)
+							}
+
+							if err == nil {
+								code := ""
+								code, err = sskeylib.MakeCode(langName, []byte(keyData[0:40]), []byte(keyData[40:80]))
+								tmpKeyIv := make([]byte, 80)
+								for i := 0; i < 40; i++ {
+									tmpKeyIv[i] = byte(u.GlobalRand1.Intn(255))
+									tmpKeyIv[40+i] = byte(u.GlobalRand2.Intn(255))
+								}
+								if err == nil {
+									err = u.WriteFile("._"+sskeyFile, u.EncryptAes(code, tmpKeyIv[2:], tmpKeyIv[45:]))
+								}
+
+								scripts = append(scripts, "./.decryptor "+sskeyFile+" "+u.EncryptAes(string(tmpKeyIv), []byte("?GQ$0Kudfia7yfd=f+~L68PLm$uhKr4'=tV"), []byte("VFs7@s1okdsnj^f?HZ"))+" || exit -1")
+							}
+						}
+					}
+					if err != nil {
+						der.Error(err.Error())
+						sskeyFile = ""
+					}
+				}
+
+				if langName == "php" {
+					sskeyFile = ""
+				}
+			}
+		}
+
+		if line != "" {
+			scripts = append(scripts, "echo '$ "+strings.ReplaceAll(printLine, "'", "\\\\'")+"'")
+			scripts = append(scripts, line+" || exit -1")
+		}
+
+		if sskeyFile != "" {
+			scripts = append(scripts, "rm -f "+sskeyFile)
+		}
 	}
 
 	buildFile := fmt.Sprintf("_%s%d.sh", stage, i)
@@ -604,7 +664,7 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 
 func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string) bool {
 	args := append(make([]string, 0), "run", "--rm", "-v", cachesPath+":"+cachesPath, "-v", buildPath+":/opt/build")
-	froms := praseCommandArgs(from)
+	froms := PraseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
 	}
@@ -697,7 +757,7 @@ func buildLogFile(context, project string, succeed bool) string {
 	return dataPath(context, project, "builds", fmt.Sprintf("%.4d-%.2d", t.Year(), t.Month()), fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d %s", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), succeedFlag))
 }
 
-func praseCommandArgs(cmd string) []string {
+func PraseCommandArgs(cmd string) []string {
 	cmd = strings.TrimSpace(cmd) + " "
 	args := make([]string, 0)
 	start := -1
@@ -711,7 +771,7 @@ func praseCommandArgs(cmd string) []string {
 		} else if c == ' ' {
 			if quota == 0 {
 				if cmd[start] == cmd[i-1] && (cmd[start] == '"' || cmd[start] == '\'') {
-					args = append(args, cmd[start+1:i-1])
+					args = append(args, strings.ReplaceAll(cmd[start+1:i-1], fmt.Sprintf("\\%c", cmd[start]), fmt.Sprintf("%c", cmd[start])))
 				} else {
 					args = append(args, cmd[start:i])
 				}
