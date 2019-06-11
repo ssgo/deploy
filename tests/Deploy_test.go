@@ -74,6 +74,7 @@ func TestInitCI(t *testing.T) {
 				Repository: g1Path,
 			},
 			"p2": {
+				Token:      "P2TTT",
 				Repository: g1Path,
 			},
 		},
@@ -153,10 +154,10 @@ func TestDeploy(t *testing.T) {
 	}
 	_ = as2.Post("/context/c1", c1, "Access-Token", service.EncodeToken("91deploy"))
 
-	r = cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1", as2.Addr), "Access-Token", service.EncodeToken("C1TTT"))
+	r = cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1?token="+"P2TTT", as2.Addr))
 	reader = bufio.NewReader(r.Response.Body)
 	lastLine = ""
-	//r := cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1", as2.Addr), "Access-Token", service.EncodeToken("C1TTT"))
+	//r := cli.Get(fmt.Sprintf("http://%s/build/c1/p2/v0.0.1?token="+"P1TTT", as2.Addr), "Access-Token", service.EncodeToken("C1TTT"))
 	//reader := bufio.NewReader(r.Response.Body)
 	//lastLine := ""
 	for {

@@ -11,7 +11,8 @@ import (
 )
 
 type GlobalInfo struct {
-	Vars map[string]string
+	Vars       map[string]string
+	SskeyToken string
 }
 
 type CacheInfo struct {
@@ -30,6 +31,9 @@ func getGlobalInfo() (out struct {
 }
 
 func setGlobalInfo(in GlobalInfo, logger *log.Logger) bool {
+	if in.SskeyToken == "" {
+		in.SskeyToken = u.ShortUniqueId()
+	}
 	err := u.Save(globalFile(), &in)
 	ok := false
 	if err == nil {
@@ -43,6 +47,7 @@ func setGlobalInfo(in GlobalInfo, logger *log.Logger) bool {
 }
 
 func setSSKeys(in s.Map, logger *log.Logger) bool {
+	delete(in, "token")
 	err := u.Save(sskeysFile(), in)
 	ok := false
 	if err == nil {

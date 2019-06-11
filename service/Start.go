@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	GUEST   = 0
-	VIEW    = 1
-	CONTEXT = 2
-	MANAGE  = 3
-	DEPLOY  = 8
+	GUEST      = 0
+	VIEW       = 1
+	CONTEXT    = 2
+	MANAGE     = 3
+	SYNCSSKEYS = 7
+	DEPLOY     = 8
 )
 
 var WorkPath = ""
@@ -30,7 +31,7 @@ func Init() {
 	s.Restful(VIEW, "GET", "/global", getGlobalInfo)
 	s.Restful(MANAGE, "POST", "/global", setGlobalInfo)
 
-	s.Restful(MANAGE, "POST", "/sskeys", setSSKeys)
+	s.Restful(SYNCSSKEYS, "POST", "/sskeys/{token}", setSSKeys)
 
 	s.Restful(VIEW, "GET", "/caches", getCacheList)
 	s.Restful(MANAGE, "DELETE", "/cache/{cacheName}", removeCache)
@@ -81,6 +82,10 @@ func Init() {
 		}
 	}
 
+	if !u.FileExists(globalFile()) {
+		setGlobalInfo(GlobalInfo{Vars: map[string]string{}}, logger)
+	}
+
 	go startChecker()
 }
 
@@ -99,7 +104,10 @@ func auth(authLevel int, url *string, in *map[string]interface{}, request *http.
 		projectToken := (*in)["token"]
 		contextName := (*in)["contextName"]
 		projectName := (*in)["projectName"]
-		return allowManage(&token) || allowDeploy(projectToken, contextName, projectName) || allowContext(&token, contextName)
+		return allowDeploy(projectToken, contextName, projectName)
+	case SYNCSSKEYS:
+		sskeyToken := (*in)["token"]
+		return allowSyncSSKeys(sskeyToken)
 	}
 	return false
 }
@@ -132,6 +140,20 @@ func allowContext(token *string, contextName interface{}) bool {
 			ctx := ContextInfo{}
 			_ = u.Load(contextFile(ctxName), &ctx)
 			return EncodeToken(ctx.Token) == *token
+		}
+	}
+	return false
+}
+
+func allowSyncSSKeys(token interface{}) bool {
+	if token == nil {
+		return false
+	}
+	if tokenS, ok := token.(string); ok {
+		if tokenS != "" {
+			glob := GlobalInfo{}
+			_ = u.Load(globalFile(), &glob)
+			return glob.SskeyToken == tokenS
 		}
 	}
 	return false

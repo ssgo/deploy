@@ -2,6 +2,7 @@ var GlobalView = function () {
     this.html = 'views/Global.html'
     this.stateBinds = ['authLevel', 'editMode']
     this.isActive = false
+    this.data = {host: location.host}
     // this.refreshTid = 0
 }
 
@@ -19,6 +20,7 @@ GlobalView.prototype.onShow = function () {
             vars: vars,
             _vars: _vars,
             publicKey: data.publicKey,
+            sskeyToken: data.sskeyToken,
         })
     })
 
@@ -54,7 +56,7 @@ GlobalView.prototype.save = function () {
     }
 
     var that = this
-    http.post('/global', {vars: vars}).then(function () {
+    http.post('/global', {vars: vars, sskeyToken: this.data.sskeyToken}).then(function () {
         that.setData({changed: false})
         that.onShow()
     }).catch(function (reason) {
