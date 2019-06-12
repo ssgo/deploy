@@ -2,12 +2,15 @@ var GlobalView = function () {
     this.html = 'views/Global.html'
     this.stateBinds = ['authLevel', 'editMode']
     this.isActive = false
-    this.data = {host: location.host}
+    this.data = {host: location.host, protocol: location.protocol}
     // this.refreshTid = 0
 }
 
 GlobalView.prototype.onShow = function () {
     var that = this
+    if (this.data.authLevel === 2 && states.state.editMode === true){
+        states.set({editMode:false})
+    }
     // actions.call('global.list')
     http.get('/global').then(function (data) {
         var vars = []

@@ -72,7 +72,7 @@
 				onclick="document.execCommand('copy')"
 				onmouseover="var range=document.createRange();range.selectNode(this);window.getSelection().addRange(range);"
 				onmouseout="window.getSelection().empty();"
-				title="click to copy">sskey -sync sync_key http://{data.host}/sskeys/{data.sskeyToken}</em>
+				title="click to copy">sskey -sync sync_key {data.protocol}//{data.host}/sskeys/{data.sskeyToken}</em>
 		</span>
 	</h3>
 	<div style="padding:5px">
