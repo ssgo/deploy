@@ -26,7 +26,7 @@ func getGlobalInfo() (out struct {
 	PublicKey string
 }) {
 	_ = u.Load(globalFile(), &out)
-	out.PublicKey, _ = u.ReadFile(dataPath(".ssh", "id_dsa.pub"), 2048)
+	out.PublicKey, _ = u.ReadFile(dataPath(".ssh", "id_ecdsa.pub"), 2048)
 	return
 }
 
