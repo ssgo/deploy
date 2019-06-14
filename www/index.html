@@ -5,6 +5,11 @@
     <title>Deploy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/bootstrap.min.css?v=3.3.7" />
+    <script>
+        if (location.search.indexOf('_=') === -1) {
+            location.replace(location.pathname+(location.search ? location.search+'&' : '?') + '_=' + Math.ceil(Math.random() * 1000000))
+        }
+    </script>
     <script src="js/svc-state.js?v=0.1.3"></script>
     <script src="js/svc-action.js?v=0.1.2"></script>
     <script src="js/svc-web.js?v=0.1.12"></script>
