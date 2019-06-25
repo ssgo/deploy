@@ -89,24 +89,24 @@ func Init() {
 	go startChecker()
 }
 
-func auth(authLevel int, url *string, in *map[string]interface{}, request *http.Request) bool {
+func auth(authLevel int, url *string, in map[string]interface{}, request *http.Request) bool {
 	token := request.Header.Get("Access-Token")
 	switch authLevel {
 	//case VIEW:
-	//	return allowAccess(&token) || allowManage(&token) || allowContext(&token, (*in)["contextName"])
+	//	return allowAccess(&token) || allowManage(&token) || allowContext(&token, in["contextName"])
 	case VIEW:
 		return allowManage(&token) || allowAnyContext(&token)
 	case CONTEXT:
-		return allowManage(&token) || allowContext(&token, (*in)["contextName"])
+		return allowManage(&token) || allowContext(&token, in["contextName"])
 	case MANAGE:
 		return allowManage(&token)
 	case DEPLOY:
-		projectToken := (*in)["token"]
-		contextName := (*in)["contextName"]
-		projectName := (*in)["projectName"]
+		projectToken := in["token"]
+		contextName := in["contextName"]
+		projectName := in["projectName"]
 		return allowDeploy(projectToken, contextName, projectName)
 	case SYNCSSKEYS:
-		sskeyToken := (*in)["token"]
+		sskeyToken := in["token"]
 		return allowSyncSSKeys(sskeyToken)
 	}
 	return false
