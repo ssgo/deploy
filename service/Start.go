@@ -81,10 +81,11 @@ func Init() {
 			logError(err.Error())
 		}
 	}
-	sshConfigFile := "~/.ssh/config"
+	sshConfigFile := "/root/.ssh/config"
 	if !u.FileExists(sshConfigFile) {
 		sshConfig := `Host *
-	IdentityFile ` + priKeyFile
+	IdentityFile ` + priKeyFile + `
+`
 		err := u.WriteFile(sshConfigFile, sshConfig)
 		if err != nil {
 			logError(err.Error())
