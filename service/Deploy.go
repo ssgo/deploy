@@ -47,7 +47,7 @@ func getTags(in struct {
 
 	lock(proj.Repository)
 	gitPath := checkout(proj.Repository, "master", false, in.Clean)
-	gitTags, err := u.RunCommand("git", "-C", gitPath, "tag", "-l", "--sort=taggerdate")
+	gitTags, err := u.RunCommand("git", "-C", gitPath, "tag", "-l", "--sort=taggerdate", "|sort")
 	unlock(proj.Repository)
 
 	if err != nil {
