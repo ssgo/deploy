@@ -73,20 +73,20 @@ func Init() {
 	_config.encodedManageToken = EncodeToken(_config.ManageToken)
 
 	pubKeyFile := dataPath(".ssh", "id_ecdsa.pub")
+	priKeyFile := dataPath(".ssh", "id_ecdsa")
 	if !u.FileExists(pubKeyFile) {
-		priKeyFile := dataPath(".ssh", "id_ecdsa")
 		u.CheckPath(priKeyFile)
 		_, err := u.RunCommand("ssh-keygen", "-f", priKeyFile, "-t", "ecdsa", "-N", "", "-C", "ssgo/deploy")
 		if err != nil {
 			logError(err.Error())
 		}
-		sshConfigFile := dataPath("~/.ssh", "config")
-		if !u.FileExists(sshConfigFile) {
-			sshConfig := `Host *\n	IdentityFile ` + priKeyFile
-			err := u.WriteFile(sshConfigFile, sshConfig)
-			if err != nil {
-				logError(err.Error())
-			}
+	}
+	sshConfigFile := dataPath("~/.ssh", "config")
+	if !u.FileExists(sshConfigFile) {
+		sshConfig := `Host *\n	IdentityFile ` + priKeyFile
+		err := u.WriteFile(sshConfigFile, sshConfig)
+		if err != nil {
+			logError(err.Error())
 		}
 	}
 

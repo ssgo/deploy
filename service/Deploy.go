@@ -755,7 +755,7 @@ func (der *Deployer) Run(command string, args ...string) error {
 	for {
 		n, err := reader.Read(buf)
 		if err != nil {
-			der.Error("Read stdout error", err.Error())
+			//der.Error("Read stdout error", err.Error())
 			break
 		}
 		der.Output(string(buf[0:n]))
