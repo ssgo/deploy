@@ -80,6 +80,14 @@ func Init() {
 		if err != nil {
 			logError(err.Error())
 		}
+		sshConfigFile := dataPath("~/.ssh", "config")
+		if !u.FileExists(sshConfigFile) {
+			sshConfig := `Host *\n	IdentityFile ` + priKeyFile
+			err := u.WriteFile(sshConfigFile, sshConfig)
+			if err != nil {
+				logError(err.Error())
+			}
+		}
 	}
 
 	if !u.FileExists(globalFile()) {

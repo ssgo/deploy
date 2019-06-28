@@ -289,7 +289,7 @@ func build(in struct {
 			}
 			_, err = SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
 			if err != nil {
-				der.Error("cp -r to", buildPath, "failed", err.Error())
+				der.Error("cp -r failed", err.Error())
 				return
 			}
 		}
