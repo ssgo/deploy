@@ -57,11 +57,11 @@ ContextView.prototype.build = function (projIndex, tag) {
     var proj = this.data.projects[projIndex]
     var that = this
     if(tag == "master"){
-        tag = prompt("enter a tag for building project").trim()
+        tag = prompt("Please enter a tag").trim()
         if(tag.length==0) {
             return
         }
-        tag = "_"+"tag"
+        tag = "_"+tag
     }
     var ws = new WebSocket('ws://' + location.host + '/ws-build/' + that.name + '/' + proj.name + '/' + tag + '?token=' + proj.token);
     ws.onmessage = function (evt) {
