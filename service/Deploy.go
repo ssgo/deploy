@@ -260,8 +260,19 @@ func build(in struct {
 	}
 
 	_ = os.Chdir(WorkPath)
-	SimpleRun("cp", ".decryptor", buildPath)
-	SimpleRun("chmod", "+x", path.Join(buildPath, ".decryptor"))
+	decrptFile := ".decryptor"
+	if u.FileExists(decrptFile) {
+		_, err = SimpleRun("cp", decrptFile, buildPath)
+		if err != nil {
+			der.Error("add decryptor failed", err.Error())
+			return
+		}
+		_, err = SimpleRun("chmod", "+x", path.Join(buildPath, decrptFile))
+		if err != nil {
+			der.Error("add privilege for decryptor failed", err.Error())
+			return
+		}
+	}
 
 	vars["BUILD_PATH"] = buildPath
 	lock(proj.Repository)
@@ -276,7 +287,11 @@ func build(in struct {
 			if fileName == "." || fileName == ".." || fileName == ".git" {
 				continue
 			}
-			SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
+			_, err = SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
+			if err != nil {
+				der.Error("cp -r to", buildPath, "failed", err.Error())
+				return
+			}
 		}
 	}
 	unlock(proj.Repository)
@@ -358,7 +373,11 @@ func build(in struct {
 		}
 		if b.From == "" || b.From == "local" {
 			// 从本地构建
-			shell := SimpleRun("sh", shellFile)
+			shell, err := SimpleRun("sh", shellFile)
+			if err != nil {
+				der.Error(err.Error())
+				return
+			}
 			if shell == "" || der.Run(shell, buildFile) != nil {
 				return
 			}
@@ -389,7 +408,7 @@ func build(in struct {
 		if len(d.Dockerfile) > 0 {
 			err := u.WriteFile("Dockerfile", strings.Join(d.Dockerfile, "\n"))
 			if err != nil {
-				der.Error(err.Error())
+				der.Error("Make Dockerfile failed", err.Error())
 				return
 			}
 		}
@@ -403,7 +422,11 @@ func build(in struct {
 
 		if d.From == "" || d.From == "local" {
 			// 从本地构建
-			shell := SimpleRun("sh", shellFile)
+			shell, err := SimpleRun("sh", shellFile)
+			if err != nil {
+				der.Error("sh", shellFile, "failed", err.Error())
+				return
+			}
 			if shell == "" || der.Run(shell, buildFile) != nil {
 				return
 			}
@@ -500,7 +523,11 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 			printLine = strings.ReplaceAll(line, ".poo_info_a", "****")
 
 			if !u.FileExists(".poo_info_a") {
-				SimpleRun("cp", dataPath(".ssh", "id_dsa"), ".poo_info_a")
+				_, err := SimpleRun("cp", dataPath(".ssh", "id_dsa"), ".poo_info_a")
+				if err != nil {
+					der.Error("make key failed")
+					return ""
+				}
 			}
 		}
 
@@ -593,7 +620,7 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 	der.Info("# make", buildFile)
 	err := u.WriteFile(buildFile, strings.Join(scripts, "\n"))
 	if err != nil {
-		der.Error(err.Error())
+		der.Error(buildFile, "write file failed", err.Error())
 		return ""
 	}
 	return buildFile
@@ -728,6 +755,7 @@ func (der *Deployer) Run(command string, args ...string) error {
 	for {
 		n, err := reader.Read(buf)
 		if err != nil {
+			der.Error("Read stdout error", err.Error())
 			break
 		}
 		der.Output(string(buf[0:n]))
@@ -742,10 +770,10 @@ func (der *Deployer) Run(command string, args ...string) error {
 	return nil
 }
 
-func SimpleRun(command string, args ...string) string {
+func SimpleRun(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
-	buf, _ := cmd.Output()
-	return strings.TrimSpace(string(buf))
+	buf, err := cmd.Output()
+	return strings.TrimSpace(string(buf)), err
 }
 
 func buildLogFile(context, project string, succeed bool) string {
