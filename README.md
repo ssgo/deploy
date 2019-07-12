@@ -185,7 +185,7 @@ deploy:
    - test "$(cat dist/abc.txt)" = $checkABC
 ```
 
-### cacheTag
+## cacheTag
 
 build缓存，主要存放依赖包，每更改一次cacheTag重新拉取一次依赖包
 
@@ -195,7 +195,7 @@ build缓存，主要存放依赖包，每更改一次cacheTag重新拉取一次�
 contextName + "-" + projectName
 ```
 
-### cache
+## cache
 
 依赖包的实际存放目录：/${DataPath}/_cache/${cacheTag}/${cache}
 
@@ -207,7 +207,7 @@ contextName + "-" + projectName
 
 cache名字建议不要更改
 
-### build
+## build
 
 当前project编译打包build的过程
 
@@ -217,15 +217,15 @@ cache名字建议不要更改
 
 from:local 代表本地构建
 
-from docker@192.168.0.61 ssh无密登录到指定机器进行构建
+from:docker@192.168.0.61 ssh无密登录到指定机器进行构建
 
 #### script
 
 执行的linux脚本
 
-### deploy
+## deploy
 
-deploy为成品的过程，镜像或压缩包
+经过deploy操作提供成品的过程，产品为镜像或压缩包等
 
 #### from
 
@@ -233,10 +233,12 @@ deploy为成品的过程，镜像或压缩包
 
 #### Dockerfile
 
-与docker的Dockerfile编写语法一直
+与docker的Dockerfile编写语法一致
+
+注意：换行的时候不一致，这里不要使用反斜线换行，换行后多一个制表符
 
 #### script
 
 执行的linux脚本
 
-注意：换行的时候不一致，这里不要使用反斜线换行，换行后多一个制表符
+#### sskey
