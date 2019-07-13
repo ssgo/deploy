@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Api</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: #fff;
+            color: #333;
+        }
+
+        header {
+            border-bottom: #ddd 1px solid;
+            margin-bottom: 5px;
+            color: #000;
+            padding: 8px;
+        }
+
+        header > span {
+            font-weight: bold;
+        }
+
+        label {
+            display: inline-block;
+            padding: 0 5px;
+            background: #666;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        section {
+            margin-bottom: 20px;
+            white-space: nowrap;
+            font-size: 0;
+        }
+
+        header.Action, section.Action {
+            margin-left: 20px;
+        }
+
+        section > table {
+            width: 50%;
+            display: inline-table;
+            border-collapse: collapse;
+            vertical-align: top;
+            font-size: 16px;
+
+        }
+
+        section > table:last-child {
+            border-left: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        td {
+            padding: 3px 8px;
+            white-space: pre-wrap;
+        }
+
+        td:last-child {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<header class="Web">
+    <span>/caches</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">[]map[Name:string Num:int Size:int64]</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/contexts</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">[]string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/login</span>
+
+<label>POST</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">AccessToken</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">int</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/global</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+    <table>
+    
+    
+        <tr>
+            <td width="30%">GlobalInfo</td>
+            <td width="70%">{
+	&#34;SskeyToken&#34;: &#34;string&#34;,
+	&#34;Vars&#34;: &#34;map[string]string&#34;
+}</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">PublicKey</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/global</span>
+<label>3</label>
+<label>POST</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">SskeyToken</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Vars</td>
+            <td width="70%">map[string]string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/sskeys/{token}</span>
+<label>7</label>
+<label>POST</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+        <tr>
+            <td colspan="2">map[string]*</td>
+        </tr>
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/cache/{cacheName}</span>
+<label>3</label>
+<label>DELETE</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">CacheName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/context/{contextName}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+    
+        <tr>
+            <td width="30%">Desc</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Projects</td>
+            <td width="70%">map[string]map[Desc:string Repository:string Token:string]</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Token</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Vars</td>
+            <td width="70%">map[string]string</td>
+        </tr>
+    
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/context/{contextName}</span>
+<label>2</label>
+<label>POST</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextInfo</td>
+            <td width="70%">{
+	&#34;Desc&#34;: &#34;string&#34;,
+	&#34;Projects&#34;: &#34;map[string]map[Desc:string Repository:string Token:string]&#34;,
+	&#34;Token&#34;: &#34;string&#34;,
+	&#34;Vars&#34;: &#34;map[string]string&#34;
+}</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/context/{contextName}</span>
+<label>3</label>
+<label>DELETE</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/ci/{contextName}/{projectName}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/tags/{contextName}/{projectName}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">Clean</td>
+            <td width="70%">bool</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">[]string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/histories/{contextName}/{projectName}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">[]string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/histories/{contextName}/{projectName}/{month}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Month</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">[]string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/history/{contextName}/{projectName}/{build}</span>
+<label>1</label>
+<label>GET</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">Build</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">string</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/ci/{contextName}/{projectName}</span>
+<label>2</label>
+<label>POST</label>
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">Ci</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/build/{contextName}/{projectName}</span>
+<label>8</label>
+
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Tag</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Token</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/build/{contextName}/{projectName}/{tag}</span>
+<label>8</label>
+
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Tag</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Token</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="Web">
+    <span>/update/{contextName}/{projectName}</span>
+<label>8</label>
+
+
+</header>
+<section class="Web">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">Clean</td>
+            <td width="70%">bool</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2">bool</td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="WebSocket">
+    <span>/ws-build/{contextName}/{projectName}</span>
+<label>8</label>
+
+<label>WebSocket</label>
+</header>
+<section class="WebSocket">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Tag</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Token</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+</section>
+
+<header class="WebSocket">
+    <span>/ws-build/{contextName}/{projectName}/{tag}</span>
+<label>8</label>
+
+<label>WebSocket</label>
+</header>
+<section class="WebSocket">
+    <table>
+    
+    
+        <tr>
+            <td width="30%">ContextName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">ProjectName</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Tag</td>
+            <td width="70%">string</td>
+        </tr>
+    
+        <tr>
+            <td width="30%">Token</td>
+            <td width="70%">string</td>
+        </tr>
+    
+    
+    </table>
+    <table>
+    
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    
+    </table>
+</section>
+
+</body>
+</html>
