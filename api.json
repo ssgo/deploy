@@ -1,0 +1,267 @@
+[
+	{
+		"Type": "Web",
+		"Path": "/login",
+		"AuthLevel": 0,
+		"Priority": 0,
+		"Method": "POST",
+		"In": {
+			"accessToken": "string"
+		},
+		"Out": "int"
+	},
+	{
+		"Type": "Web",
+		"Path": "/global",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": "",
+		"Out": {
+			"globalInfo": {
+				"sskeyToken": "string",
+				"vars": "map[string]string"
+			},
+			"publicKey": "string"
+		}
+	},
+	{
+		"Type": "Web",
+		"Path": "/global",
+		"AuthLevel": 3,
+		"Priority": 0,
+		"Method": "POST",
+		"In": {
+			"sskeyToken": "string",
+			"vars": "map[string]string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/caches",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": "",
+		"Out": "[]map[name:string num:int size:int64]"
+	},
+	{
+		"Type": "Web",
+		"Path": "/contexts",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": "",
+		"Out": "[]string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/sskeys/{token}",
+		"AuthLevel": 7,
+		"Priority": 0,
+		"Method": "POST",
+		"In": "map[string]*",
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/cache/{cacheName}",
+		"AuthLevel": 3,
+		"Priority": 0,
+		"Method": "DELETE",
+		"In": {
+			"cacheName": "string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/context/{contextName}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"contextName": "string"
+		},
+		"Out": {
+			"desc": "string",
+			"projects": "map[string]map[desc:string repository:string token:string]",
+			"token": "string",
+			"vars": "map[string]string"
+		}
+	},
+	{
+		"Type": "Web",
+		"Path": "/context/{contextName}",
+		"AuthLevel": 2,
+		"Priority": 0,
+		"Method": "POST",
+		"In": {
+			"contextInfo": {
+				"desc": "string",
+				"projects": "map[string]map[desc:string repository:string token:string]",
+				"token": "string",
+				"vars": "map[string]string"
+			},
+			"contextName": "string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/context/{contextName}",
+		"AuthLevel": 3,
+		"Priority": 0,
+		"Method": "DELETE",
+		"In": {
+			"contextName": "string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/ci/{contextName}/{projectName}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/tags/{contextName}/{projectName}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"clean": "bool",
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "[]string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/histories/{contextName}/{projectName}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "[]string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/histories/{contextName}/{projectName}/{month}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"contextName": "string",
+			"month": "string",
+			"projectName": "string"
+		},
+		"Out": "[]string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/history/{contextName}/{projectName}/{build}",
+		"AuthLevel": 1,
+		"Priority": 0,
+		"Method": "GET",
+		"In": {
+			"build": "string",
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "string"
+	},
+	{
+		"Type": "Web",
+		"Path": "/ci/{contextName}/{projectName}",
+		"AuthLevel": 2,
+		"Priority": 0,
+		"Method": "POST",
+		"In": {
+			"ci": "string",
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "Web",
+		"Path": "/build/{contextName}/{projectName}",
+		"AuthLevel": 8,
+		"Priority": 0,
+		"Method": "",
+		"In": {
+			"contextName": "string",
+			"projectName": "string",
+			"tag": "string",
+			"token": "string"
+		},
+		"Out": ""
+	},
+	{
+		"Type": "Web",
+		"Path": "/build/{contextName}/{projectName}/{tag}",
+		"AuthLevel": 8,
+		"Priority": 0,
+		"Method": "",
+		"In": {
+			"contextName": "string",
+			"projectName": "string",
+			"tag": "string",
+			"token": "string"
+		},
+		"Out": ""
+	},
+	{
+		"Type": "Web",
+		"Path": "/update/{contextName}/{projectName}",
+		"AuthLevel": 8,
+		"Priority": 0,
+		"Method": "",
+		"In": {
+			"clean": "bool",
+			"contextName": "string",
+			"projectName": "string"
+		},
+		"Out": "bool"
+	},
+	{
+		"Type": "WebSocket",
+		"Path": "/ws-build/{contextName}/{projectName}",
+		"AuthLevel": 8,
+		"Priority": 0,
+		"Method": "",
+		"In": {
+			"contextName": "string",
+			"projectName": "string",
+			"tag": "string",
+			"token": "string"
+		},
+		"Out": ""
+	},
+	{
+		"Type": "WebSocket",
+		"Path": "/ws-build/{contextName}/{projectName}/{tag}",
+		"AuthLevel": 8,
+		"Priority": 0,
+		"Method": "",
+		"In": {
+			"contextName": "string",
+			"projectName": "string",
+			"tag": "string",
+			"token": "string"
+		},
+		"Out": ""
+	}
+]
