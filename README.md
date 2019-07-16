@@ -10,11 +10,19 @@ ssgo/deploy是一套简单易用的构建部署工具。
 docker run -d --restart=always --network=host -v /opt/deploy:/opt/deploy -v /var/run/docker.sock:/var/run/docker.sock {deploy-image}
 ```
 
-deploy运行起来之后就可以使用了。
+容器运行起来后，就可以使用deploy了，直接使用宿主机的docker资源。
 
-镜像也可以自己根据ssgo/deploy的代码进行构建。
+docker run使用 -e 'deploy_manageToken=xxxx' 可以给deploy提供登录密码，如果没有设置默认密码为91deploy。
 
 deploy的启动也可以在ssgo/hub中配置开启。
+
+## 访问
+
+hub访问通过：http://xx.xx.xx.xx:7777/
+
+默认使用 8888 端口，可以使用 -p xxxx:7777 来改变端口。
+
+或者启动容器指定 service_listen=":xxxx" 来改变端口。
 
 ## 容器网络模式
 
@@ -28,9 +36,12 @@ deploy的启动也可以在ssgo/hub中配置开启。
 
 # 自定义deploy镜像
 
+镜像也可以自己根据ssgo/deploy的代码进行构建。
+
 编译deploy：
 
 ```shell
+mkdir -p dist
 sed -i 's/__TAG__/$TAG/g' www/index.html www/views/Deploy.html
 go mod tidy
 go build -ldflags -w -o dist/server *.go
@@ -44,7 +55,8 @@ Dockerfile:
 FROM alpine
 ADD zoneinfo/PRC /etc/localtime
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
-    && apk add openssh-client && rm -f /var/cache/apk/*
+    && apk add tzdata git openssh-client docker 
+    && rm -f /var/cache/apk/* /usr/bin/dockerd /usr/bin/containerd* /usr/bin/ctr /usr/bin/runc /usr/bin/docker-proxy
 ADD dist/ /opt/
 ENTRYPOINT /opt/server
 HEALTHCHECK --interval=10s --timeout=3s CMD /opt/server check
@@ -80,14 +92,6 @@ manageToken     代表hub的登录密码，以读写方式查看节点和应用�
 使用 -e hub_managerToken=91hub 配置查看和管理口令进行登录授权。
 
 使用 -e service_xxxx 来配置 http 相关参数，例如可以配置为基于 https 访问，具体配置请参考 https://github.com/ssgo/s。
-
-## 访问
-
-hub访问通过：http://xx.xx.xx.xx:7777/
-
-默认使用 8888 端口，可以使用 -p xxxx:7777 来改变端口。
-
-或者启动容器指定 service_listen=":xxxx" 来改变端口。
 
 ## global
 
@@ -193,10 +197,8 @@ deploy:
      && rm -f /var/cache/apk/*
    - HEALTHCHECK --interval=10s --timeout=3s CMD /opt/server check
  script:
-   - cp dist/stars dist/stars2
-   - echo -n "!!!" >> cache/stars2
-   - echo "$(cat dist/abc.txt)" = {$checkABC}
-   - test "$(cat dist/abc.txt)" = $checkABC
+   - docker build . -t $REGISTRY$CONTEXT/$PROJECT:$TAG
+   - docker push $REGISTRY$CONTEXT/$PROJECT:$TAG
 ```
 
 ## cacheTag
@@ -236,10 +238,12 @@ from:docker@192.168.0.61 ssh无密登录到指定机器进行构建。
 from:ssgo/hub 开启容器构建：
 
 ```
-docker run -rm -v cachePath:cachePath -v buildPath:buildPath 指定参数 镜像 sh /opt/build/buildFile
+docker run -rm -v cachePath:cachePath -v buildPath:buildPath 指定参数 sh /opt/build/buildFile
 ```
-运行容器，把后续命令放入构建文件中，执行。
 
+其中指定参数的第一个参数是镜像地址
+
+运行容器，把后续命令放入构建文件中，执行。
 
 #### script
 
@@ -253,7 +257,7 @@ ssgo/sskey的构建支持：
 sskey-go:aaa echo 'go build'
 ```
 
-代表根据aaa秘钥提供go语言版本sskey aes加密秘钥生成文件，将生成文件放在项目根目录进行构建。
+代表根据aaa密钥提供go语言版本sskey aes加密密钥生成文件，将生成文件放在项目根目录进行构建。
 
 go语言的文件名是：``UniqueId.go``，文件名是随机的。
 
@@ -267,7 +271,7 @@ go语言的文件名是：``UniqueId.go``，文件名是随机的。
 sskey-go:aaa:ghjasd.go echo 'go build'
 ```
 
-代表指定秘钥生成文件为ghjasd.go。
+代表指定密钥生成文件为ghjasd.go。
 
 使用后这个文件会被系统删除，php是直接在项目中使用，不用删除。
 
@@ -277,7 +281,26 @@ sskey-go 后半部分定义的shell不可以使用cp||scp||mv命令。
 
 #### SSkey流程
 
-这里重点描述SSkey流程。
+deploy结合SSkey使用流程：
+
+![](deploy-sskey-flow.png?v=1.0)
+
+sskey管理员定制编译deploy，进入 ssgo/deploy项目目录：
+
+```shell
+mkdir -p dist
+sed -i 's/__TAG__/$TAG/g' www/index.html www/views/Deploy.html
+sskey -go sync > _.go
+export GOPROXY=https://goproxy.io
+export CGO_ENABLED=0
+go mod tidy
+go build -ldflags -w -o dist/server
+rm -f _.go
+cp *.yml dist/
+cp -ra www dist/
+```
+
+将编译文件写入镜像，服务运行时sskey -sync指定秘钥，保障sskey秘钥的安全。
 
 ## deploy
 

@@ -13,6 +13,10 @@ import (
 var as *s.AsyncServer
 var dataPath = os.TempDir() + "data1"
 
+func TestPraseCommandArgs(t *testing.T) {
+	fmt.Println(service.PraseCommandArgs("asdjfo \"asdf=adfa asd=adfaf\" adfw -v apaidsa 'hello&sdfa=adfa'"))
+}
+
 func TestStart(t *testing.T) {
 	_ = os.RemoveAll(dataPath)
 	fmt.Println("dataPath:", dataPath)
