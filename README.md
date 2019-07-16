@@ -324,6 +324,15 @@ cp -ra www dist/
 
 开放api可以参考：[api文档](api.json)。
 
-登录api可以直接调用，其他api使用鉴权。使用相关权限的token才可以正常调用api。
+其中：
+
+- Type有Web,WebSocket,Action,Proxy,Rewrite
+- Path是url路径
+- authLevel是授权等级(authLevel=0表示不需要授权)
+- Method就是restful中的method方法
+- In代表入参
+- out代表出参
+
+login api可以直接调用，其他api使用鉴权。使用相关权限的token才可以正常调用api。
 
 token在api请求的header头Access-Token中设置。
