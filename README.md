@@ -330,7 +330,7 @@ cp -ra www dist/
 
 deploy是生产成品的过程，实际部署可以借助其他工具。
 
-如果部署使用的是docker容器，推荐使用ssgo/hub来做轻量级的容器编排，具体可以查看[ssgo/dock](https://github.com/ssgo/hub)。
+如果部署使用的是docker容器，推荐使用ssgo/hub来做轻量级的容器编排，具体可以查看[ssgo/hub](https://github.com/ssgo/hub)。
 
 # Api
 
