@@ -251,7 +251,7 @@ docker run -rm -v cachePath:cachePath -v buildPath:buildPath 指定参数 sh /op
 
 #### SSkey
 
-ssgo/sskey的构建支持：
+ssgo/deploy的构建支持：
 
 ```shell
 sskey-go:aaa echo 'go build'
@@ -283,7 +283,7 @@ sskey-go 后半部分定义的shell不可以使用cp||scp||mv命令。
 
 deploy结合SSkey使用流程：
 
-![](deploy-sskey-flow.png?v=1.0)
+![](deploy-sskey-flow.png?v=1.1)
 
 sskey管理员定制编译deploy：
 
