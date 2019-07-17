@@ -55,9 +55,9 @@ Dockerfile:
 FROM alpine
 ADD zoneinfo/PRC /etc/localtime
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
-    && apk add tzdata git openssh-client docker 
-    && rm -f /var/cache/apk/* /usr/bin/dockerd /usr/bin/containerd*
-    && rm -f /usr/bin/ctr /usr/bin/runc /usr/bin/docker-proxy
+    && apk add tzdata git openssh-client docker \
+    && rm -f /var/cache/apk/* /usr/bin/dockerd /usr/bin/containerd* \
+    && rm -f /usr/bin/ctr /usr/bin/runc /usr/bin/docker-proxy \
     && echo -e "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null" >> /etc/ssh/ssh_config
 ADD dist/ /opt/
 ENTRYPOINT /opt/server
@@ -67,7 +67,9 @@ HEALTHCHECK --interval=10s --timeout=3s CMD /opt/server check
 构建镜像：
 ```shell
 docker build . -t $REGISTRY$CONTEXT/$PROJECT:$TAG
+//docker login  $REGISTRY
 docker push $REGISTRY$CONTEXT/$PROJECT:$TAG
+//……
 ```
 
 # deploy平台
@@ -320,21 +322,31 @@ cp -ra www dist/
 
 #### script
 
-执行的linux脚本。
+执行的linux脚本，制造镜像或其他成品。
+
+到这里完成deploy的工作。
+
+注意：
+
+deploy是生产成品的过程，实际部署可以借助其他工具。
+
+如果部署使用的是docker容器，推荐使用ssgo/hub来做轻量级的容器编排，具体可以查看[ssgo/dock](https://github.com/ssgo/hub)。
 
 # Api
 
-开放api可以参考：[api文档](api.json)。
+deploy的开放api可以参考：[api文档](api.json)。
 
-其中：
+其中字段的具体含义：
 
 - Type有Web,WebSocket,Action,Proxy,Rewrite
 - Path是url路径
 - AuthLevel是授权等级(authLevel=0表示不需要授权)
-- Method就是restful中的method方法
+- Method就是restful api中的method方法
 - In代表入参
 - Out代表出参
 
-login api可以直接调用，其他api使用鉴权。使用相关权限的token才可以正常调用api。
+login api可以直接调用。
 
-token在api请求的header头Access-Token中设置。
+其他api需要使用鉴权。使用相关权限的token才可以正常调用api。
+
+token在api请求的header头Access-Token中设置具体值。
