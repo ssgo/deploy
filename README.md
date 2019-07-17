@@ -7,7 +7,7 @@ ssgo/deploy是一套简单易用的构建部署工具。
 然后运行：
 
 ```shell
-docker run -d --restart=always --network=host -v /opt/deploy:/opt/deploy -v /var/run/docker.sock:/var/run/docker.sock {deploy-image}
+docker run -d --restart=always --network=host --name deploy -v /opt/deploy:/opt/deploy -v /var/run/docker.sock:/var/run/docker.sock {deploy-image}
 ```
 
 容器运行起来后，就可以使用deploy了，直接使用宿主机的docker资源。
@@ -285,7 +285,7 @@ deploy结合SSkey使用流程：
 
 ![](deploy-sskey-flow.png?v=1.0)
 
-sskey管理员定制编译deploy，进入 ssgo/deploy项目目录：
+sskey管理员定制编译deploy：
 
 ```shell
 mkdir -p dist
@@ -300,7 +300,7 @@ cp *.yml dist/
 cp -ra www dist/
 ```
 
-将编译文件写入镜像，服务运行时sskey -sync指定秘钥，保障sskey秘钥的安全。
+将编译文件写入镜像，服务运行时，管理员在sskey的机器上运行sskey -sync指定秘钥传递给deploy服务，保障sskey秘钥的安全。
 
 ## deploy
 
@@ -328,10 +328,10 @@ cp -ra www dist/
 
 - Type有Web,WebSocket,Action,Proxy,Rewrite
 - Path是url路径
-- authLevel是授权等级(authLevel=0表示不需要授权)
+- AuthLevel是授权等级(authLevel=0表示不需要授权)
 - Method就是restful中的method方法
 - In代表入参
-- out代表出参
+- Out代表出参
 
 login api可以直接调用，其他api使用鉴权。使用相关权限的token才可以正常调用api。
 
