@@ -56,7 +56,9 @@ FROM alpine
 ADD zoneinfo/PRC /etc/localtime
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
     && apk add tzdata git openssh-client docker 
-    && rm -f /var/cache/apk/* /usr/bin/dockerd /usr/bin/containerd* /usr/bin/ctr /usr/bin/runc /usr/bin/docker-proxy
+    && rm -f /var/cache/apk/* /usr/bin/dockerd /usr/bin/containerd*
+    && rm -f /usr/bin/ctr /usr/bin/runc /usr/bin/docker-proxy
+    && echo -e "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null" >> /etc/ssh/ssh_config
 ADD dist/ /opt/
 ENTRYPOINT /opt/server
 HEALTHCHECK --interval=10s --timeout=3s CMD /opt/server check
