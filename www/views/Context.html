@@ -166,16 +166,20 @@
 						class="glyphicon glyphicon-play"
 						style="float: right"></a></li>
 		</ul>
-		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', true)"
+		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', false)"
 				style="position: absolute;bottom: 50px;left: 10px;width: 160px;height: 30px"><span
 					class="glyphicon glyphicon-refresh "></span> Refresh Tags
+		</button>
+		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', true)"
+				style="position: absolute;bottom: 15px;left: 10px;width: 160px;height: 30px"><span
+					class="glyphicon glyphicon-refresh "></span> Fix Tags
 		</button>
 		<div style="position: absolute;top: 10px;bottom: 50px;left: 180px;right: 10px;">
 					<textarea class="buildOutput" readonly
 							  style="width: 100%;height: 100%;background: #333333; color: #ec971f;"></textarea>
 
 		</div>
-		<div align="center" style="position: absolute;bottom: 10px;left: 0;right: 0;height: 30px">
+		<div align="center" style="position: absolute;bottom: 10px;left: 200px;right: 200px;height: 30px">
 			<button onclick="$this.hideTagWindow()" class="btn btn-default" style="width:100px;">Close</button>
 		</div>
 	</div>

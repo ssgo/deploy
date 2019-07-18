@@ -48,6 +48,11 @@ ContextView.prototype.hideTagWindow = function () {
 
 ContextView.prototype.refreshTags = function (projectName, clean) {
     var that = this
+    if(clean) {
+        if(!confirm("Fix tags will remove project "+projectName+" and take some time to clone the code again.Are you sure to fix?")) {
+            return
+        }
+    }
     http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
         that.setData({tags: data})
     })
