@@ -167,6 +167,7 @@ func checkout(repository, tag string, pull bool, clean bool) string {
 		if pull {
 			logger.Info("git pull", "repository", repository, "tag", tag)
 			_, err = u.RunCommand("git", "-C", gitPath, "pull")
+			_, err = u.RunCommand("git", "-C", gitPath, "fetch -t -p -f")
 		}
 	} else {
 		logger.Info("git clone "+repository+" .", "repository", repository, "tag", tag)
