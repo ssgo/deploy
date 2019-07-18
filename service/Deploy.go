@@ -47,7 +47,7 @@ func getTags(in struct {
 
 	lock(proj.Repository)
 	gitPath := checkout(proj.Repository, "master", false, in.Clean)
-	gitTags, err := u.RunCommand("git", "-C", gitPath, "for-each-ref", "--sort=-taggerdate", "--format '%(tag)'", "refs/tags")
+	gitTags, err := u.RunCommand("git", "-C", gitPath, "tag", "-l", "--sort=-taggerdate")
 	unlock(proj.Repository)
 
 	if err != nil {
@@ -57,10 +57,26 @@ func getTags(in struct {
 
 	if gitPath != "" && len(outTags) > 0 {
 		routs := make([]string, 0)
-		for j := len(gitTags) - 1; j >= 0; j-- {
-			if len(strings.TrimSpace(gitTags[j])) > 0 {
-				routs = append(routs, gitTags[j])
+		tagErr := ""
+		lenGitTags := len(gitTags)
+		for j := 0; j < lenGitTags; j++ {
+			gitTag := strings.TrimSpace(gitTags[j])
+			if len(gitTag) < 1 {
+				continue
 			}
+			if strings.Index(gitTag, " ") != -1 {
+				tagErr += gitTag + "   "
+				continue
+			}
+			if strings.Index(gitTag, "\t") != -1 {
+				tagErr = gitTag + "   "
+				continue
+			}
+
+			routs = append(routs, gitTag)
+		}
+		if tagErr != "" {
+			logger.Error("outTags err:" + tagErr)
 		}
 		outTags = append(outTags, routs...)
 	}
