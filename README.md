@@ -242,7 +242,7 @@ from:docker@192.168.0.61 ssh无密登录到指定机器进行构建。
 from:ssgo/hub 开启容器构建：
 
 ```
-docker run -rm -v cachePath:cachePath -v buildPath:buildPath 指定参数 sh /opt/build/buildFile
+docker run -rm -v cachePath:cachePath -v buildPath:/root 指定参数 sh /root/buildFile
 ```
 
 其中指定参数的第一个参数是镜像地址

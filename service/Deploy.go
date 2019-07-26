@@ -21,6 +21,8 @@ import (
 
 var gitLocks = map[string]*sync.Mutex{}
 
+var projectContainerPath = "/root"
+
 func lock(name string) {
 	if gitLocks[name] == nil {
 		gitLocks[name] = new(sync.Mutex)
@@ -144,7 +146,7 @@ func getHistoryBuild(in struct {
 		return ""
 	}
 
-	str, err := u.ReadFile(dataPath(in.ContextName, in.ProjectName, "builds", in.Build[0:7], in.Build), 204800)
+	str, err := u.ReadFile(dataPath(in.ContextName, in.ProjectName, "builds", in.Build[0:7], in.Build), 2048000)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -326,7 +328,7 @@ func build(in struct {
 	//	return
 	//}
 	der.Info()
-
+	var mountStr string
 	// 初始化 cache
 	if ci.Cache != "" {
 		caches := strings.Split(ci.Cache, " ")
@@ -335,19 +337,24 @@ func build(in struct {
 				continue
 			}
 			var cachedPath string
+			var singleCache string
 			if cachePath[0] != '/' {
+				singleCache = cachePath
 				cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
 				cachePath = fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, cachePath)
 			} else {
-				cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
+				singleCache = cachePath[1:]
+				cachedPath = dataPath("_caches", ci.CacheTag, singleCache)
 			}
+			mountStr += " -v " + cachedPath + ":" + projectContainerPath + "/" + singleCache
 			if !u.FileExists(cachedPath) {
 				_ = os.MkdirAll(cachedPath, 0700)
 			}
 			if u.FileExists(cachePath) {
 				_ = os.RemoveAll(cachePath)
 			}
-			_ = der.Run("ln", "-s", cachedPath, cachePath)
+			//ln made node_modules problem
+			//_ = der.Run("ln", "-s", cachedPath, cachePath)
 			//_ = der.Run("cp", "-r", cachedPath, cachePath)
 		}
 	}
@@ -406,7 +413,7 @@ func build(in struct {
 			}
 		} else {
 			// 从Docker构建
-			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches")) {
+			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches"), mountStr) {
 				return
 			}
 		}
@@ -461,7 +468,7 @@ func build(in struct {
 			//if der.Run("docker", args...) != nil {
 			//	return
 			//}
-			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile, dataPath("_caches")) {
+			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile, dataPath("_caches"), "") {
 				return
 			}
 		}
@@ -485,7 +492,7 @@ func build(in struct {
 
 func (der *Deployer) makeDockerBuildFile(buildScript string) string {
 	// 创建脚本
-	scripts := "cd /opt/build\n$(sh _getShell.sh) " + buildScript
+	scripts := "cd " + projectContainerPath + "\n$(sh _getShell.sh) " + buildScript
 	err := u.WriteFile("_dockerBuild.sh", scripts)
 	if err != nil {
 		der.Error(err.Error())
@@ -707,13 +714,13 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 	return true
 }
 
-func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string) bool {
-	args := append(make([]string, 0), "run", "--rm", "-v", cachesPath+":"+cachesPath, "-v", buildPath+":/opt/build")
+func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string, mountStr string) bool {
+	args := append(make([]string, 0), "run", "--rm", "-v", cachesPath+":"+projectContainerPath, mountStr)
 	froms := PraseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
 	}
-	args = append(args, froms[0], "sh", "/opt/build/"+dockerBuildFile)
+	args = append(args, froms[0], "sh", projectContainerPath+"/"+dockerBuildFile)
 	if der.Run("docker", args...) != nil {
 		return false
 	}

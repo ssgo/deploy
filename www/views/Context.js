@@ -53,8 +53,17 @@ ContextView.prototype.refreshTags = function (projectName, clean) {
             return
         }
     }
+    optTagsText = (clean === true?"fixTags":"refreshTags")
+    opsTags = document.getElementById(optTagsText)
+    waitText = "Please Wait"
+    if(opsTags.innerText == waitText) {
+        alert(waitText);
+        return
+    }
+    opsTags.innerText = waitText
     http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
         that.setData({tags: data})
+        opsTags.innerText = (clean === true?"Fix Tags":"Refresh Tags")
     })
 }
 
