@@ -56,7 +56,7 @@ ContextView.prototype.refreshTags = function (projectName, clean) {
     optTagsText = (clean === true?"fixTags":"refreshTags")
     opsTags = document.getElementById(optTagsText)
     waitText = "Please Wait"
-    if(opsTags.innerText == waitText) {
+    if(opsTags.innerHTML == waitText) {
         alert(waitText);
         return
     }

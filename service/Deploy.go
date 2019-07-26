@@ -328,7 +328,7 @@ func build(in struct {
 	//	return
 	//}
 	der.Info()
-	var mountStr string
+	var mounts []string
 	// 初始化 cache
 	if ci.Cache != "" {
 		caches := strings.Split(ci.Cache, " ")
@@ -346,7 +346,7 @@ func build(in struct {
 				singleCache = cachePath[1:]
 				cachedPath = dataPath("_caches", ci.CacheTag, singleCache)
 			}
-			mountStr += " -v " + cachedPath + ":" + projectContainerPath + "/" + singleCache
+			mounts = append(mounts, "-v", cachedPath+":"+projectContainerPath+"/"+singleCache)
 			if !u.FileExists(cachedPath) {
 				_ = os.MkdirAll(cachedPath, 0700)
 			}
@@ -413,7 +413,7 @@ func build(in struct {
 			}
 		} else {
 			// 从Docker构建
-			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches"), mountStr) {
+			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches"), mounts) {
 				return
 			}
 		}
@@ -468,7 +468,8 @@ func build(in struct {
 			//if der.Run("docker", args...) != nil {
 			//	return
 			//}
-			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile, dataPath("_caches"), "") {
+			var mounts []string
+			if !der.BuildByDocker(d.From, buildPath, dockerBuildFile, dataPath("_caches"), mounts) {
 				return
 			}
 		}
@@ -714,8 +715,9 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 	return true
 }
 
-func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string, mountStr string) bool {
-	args := append(make([]string, 0), "run", "--rm", "-v", buildPath+":"+projectContainerPath+mountStr)
+func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string, mounts []string) bool {
+	args := append(make([]string, 0), "run", "-i", "--network=host", "--rm", "-v", buildPath+":"+projectContainerPath)
+	args = append(args, mounts...)
 	froms := PraseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
