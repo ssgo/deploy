@@ -715,7 +715,7 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 }
 
 func (der *Deployer) BuildByDocker(from, buildPath, dockerBuildFile, cachesPath string, mountStr string) bool {
-	args := append(make([]string, 0), "run", "--rm", "-v", buildPath+":"+projectContainerPath, mountStr)
+	args := append(make([]string, 0), "run", "--rm", "-v", buildPath+":"+projectContainerPath+mountStr)
 	froms := PraseCommandArgs(from)
 	if len(froms) > 1 {
 		args = append(args, froms[1:]...)
