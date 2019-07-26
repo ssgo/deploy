@@ -204,7 +204,7 @@ func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (m
 	vars["PROJECT"] = projectName
 	vars["TAG"] = tag
 
-	ciStr, err := u.ReadFile(ciFile(contextName, projectName), 204800)
+	ciStr, err := u.ReadFile(ciFile(contextName, projectName), 1024000)
 	if err != nil {
 		logger.Error(err.Error())
 		return nil, nil, nil

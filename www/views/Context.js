@@ -55,17 +55,26 @@ ContextView.prototype.refreshTags = function (projectName, clean) {
     }
     optTagsText = (clean === true?"fixTags":"refreshTags")
     opsTags = document.getElementById(optTagsText)
+    if(!opsTags) {
+        http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
+            that.setData({tags: data})
+        })
+        return
+    }
     waitText = "Please Wait"
-    if(opsTags.innerHTML == waitText) {
+    if(opsTags.innerText == waitText) {
         alert(waitText);
         return
     }
+    var oText = opsTags.innerText
     opsTags.innerText = waitText
     http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
         that.setData({tags: data})
-        opsTags.innerText = (clean === true?"Fix Tags":"Refresh Tags")
+        opsTags.innerText = oText
     })
 }
+
+
 
 ContextView.prototype.build = function (projIndex, tag) {
     var proj = this.data.projects[projIndex]
