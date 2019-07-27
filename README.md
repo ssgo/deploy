@@ -225,7 +225,16 @@ contextName + "-" + projectName
 /opt/deploy/_caches/ssgo-gateway-1.1/go
 ```
 
-cache名字建议不要更改。
+cache名字建议不要更改，自定义的cache名字很有可能不可被缓存。
+
+以下是各个技术栈默认的cache名：
+
+| 技术栈| 依赖管理软件 | cache名字 | 备注 |
+|:------ |:------ |:------ |:------ |
+| java | maven | .m2 | 其他依赖管理软件下载的依赖包<br />示具体情况而定 |
+| php | compose | vendor |  |
+| javascript | npm | node_modules |  |
+| go | go mod | go | 有些依赖管理软件使用vendor |
 
 ## build
 

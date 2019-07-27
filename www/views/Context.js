@@ -80,7 +80,11 @@ ContextView.prototype.build = function (projIndex, tag) {
     var proj = this.data.projects[projIndex]
     var that = this
     if(tag == "master"){
-        tag = prompt("Please enter a tag").trim()
+        tag = prompt("Please enter a tag")
+        if(!tag){
+            return;
+        }
+        tag = tag.trim()
         if(tag.length==0) {
             return
         }
