@@ -239,11 +239,18 @@ func build(in struct {
 	ProjectName string
 	Token       string
 	Tag         string
+	Ref         string
 }, logger *log.Logger, response *s.Response, conn *websocket.Conn) {
 	der := Deployer{
 		logger:   logger,
 		response: response,
 		conn:     conn,
+	}
+
+	if in.Tag == "" && in.Ref != "" {
+		in.Tag = strings.ReplaceAll(in.Ref, "refs/tags/", "")
+		in.Tag = strings.ReplaceAll(in.Tag, "refs/heads/", "")
+		in.Tag = strings.ReplaceAll(in.Tag, "/", "_")
 	}
 
 	der.outs = make([]string, 0)
@@ -262,11 +269,11 @@ func build(in struct {
 	//cacheTagValue = strings.ReplaceAll(cacheTagValue, "$PROJECT", in.ProjectName)
 	//cacheTagValue = strings.ReplaceAll(cacheTagValue, "$TAG", in.Tag)
 
-	// 检查敏感内容
-	if strings.Index(u.Json(vars)+u.Json(ci), ".poo_info_a") != -1 {
-		der.Error("has sensitive info")
-		return
-	}
+	//// 检查敏感内容
+	//if strings.Index(u.Json(vars)+u.Json(ci), ".poo_info_a") != -1 {
+	//	der.Error("has sensitive info")
+	//	return
+	//}
 
 	// 初始化 build 目录
 	buildId := u.UniqueId()
@@ -385,7 +392,9 @@ func build(in struct {
 		//		}
 		//	}
 		//}
-		_ = os.RemoveAll(buildPath)
+		if !_config.KeepBuildPath {
+			_ = os.RemoveAll(buildPath)
+		}
 	}()
 
 	// 构建
@@ -536,26 +545,18 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 	}
 
 	for _, line := range buildCommands {
-		printLine := line
-		if strings.HasPrefix(line, "scp ") {
-			newLine := "scp"
-			if strings.Index(line, " -i ") == -1 {
-				newLine += fmt.Sprint(" -i ", ".poo_info_a")
-			}
-			if strings.Index(line, "StrictHostKeyChecking") == -1 {
-				newLine += fmt.Sprint(" -o StrictHostKeyChecking=no")
-			}
-			line = newLine + line[3:]
-			printLine = strings.ReplaceAll(line, ".poo_info_a", "****")
-
-			if !u.FileExists(".poo_info_a") {
-				_, err := SimpleRun("cp", dataPath(".ssh", "id_dsa"), ".poo_info_a")
-				if err != nil {
-					der.Error("make key failed")
-					return ""
-				}
-			}
-		}
+		//printLine := line
+		//if strings.HasPrefix(line, "scp ") || strings.HasPrefix(line, "ssh ") {
+		//	newLine := line[0:3]
+		//	if strings.Index(line, " -i ") == -1 {
+		//		newLine += fmt.Sprint(" -i ", dataPath(".ssh", "id_ecdsa"))
+		//	}
+		//	if strings.Index(line, "StrictHostKeyChecking") == -1 {
+		//		newLine += fmt.Sprint(" -o StrictHostKeyChecking=no")
+		//	}
+		//	line = newLine + line[3:]
+		//	printLine = strings.ReplaceAll(line, dataPath(".ssh", "id_ecdsa"), "****")
+		//}
 
 		sskeyFile := ""
 		if strings.HasPrefix(line, "sskey-") {
@@ -633,7 +634,8 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 		}
 
 		if line != "" {
-			scripts = append(scripts, "echo '$ "+strings.ReplaceAll(printLine, "'", "\\\\'")+"'")
+			//scripts = append(scripts, "echo '$ "+strings.ReplaceAll(printLine, "'", "\\\\'")+"'")
+			scripts = append(scripts, "echo '$ "+strings.ReplaceAll(line, "'", "\\\\'")+"'")
 			scripts = append(scripts, line+" || exit -1")
 		}
 
@@ -684,8 +686,8 @@ func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool
 	//	return false
 	//}
 
-	sshBaseArgs := append(make([]string, 0), "-i", dataPath(".ssh", "id_dsa"), "-o", "StrictHostKeyChecking=no")
-	scpBaseArgs := append(make([]string, 0), "-i", dataPath(".ssh", "id_dsa"), "-o", "StrictHostKeyChecking=no", "-r")
+	sshBaseArgs := append(make([]string, 0), "-i", dataPath(".ssh", "id_ecdsa"), "-o", "StrictHostKeyChecking=no")
+	scpBaseArgs := append(make([]string, 0), "-i", dataPath(".ssh", "id_ecdsa"), "-o", "StrictHostKeyChecking=no", "-r")
 
 	a := strings.Split(from, " ")
 	host := a[0]
@@ -749,14 +751,14 @@ func (der *Deployer) Output(str string) {
 		err = der.conn.WriteMessage(websocket.TextMessage, []byte(str))
 	}
 	if err != nil {
-		der.Error(err.Error())
+		der.logger.Error(err.Error())
 	}
 }
 
 func (der *Deployer) Run(command string, args ...string) error {
 	printCmd := fmt.Sprintln("#", command, strings.Join(args, " "))
 	if command == "ssh" || command == "scp" {
-		printCmd = strings.ReplaceAll(printCmd, dataPath(".ssh", "id_dsa"), "****")
+		printCmd = strings.ReplaceAll(printCmd, dataPath(".ssh", "id_ecdsa"), "****")
 	}
 	der.Output(printCmd)
 

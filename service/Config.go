@@ -13,6 +13,7 @@ import (
 var _config = struct {
 	DataPath string
 	//AccessToken string
+	KeepBuildPath      bool
 	ManageToken        string
 	encodedManageToken string
 }{}

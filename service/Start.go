@@ -84,6 +84,7 @@ func Init() {
 	sshConfigFile := "/root/.ssh/config"
 	if !u.FileExists(sshConfigFile) {
 		sshConfig := `Host *
+	StrictHostKeyChecking=no
 	IdentityFile ` + priKeyFile + `
 `
 		err := u.WriteFile(sshConfigFile, sshConfig)
@@ -112,6 +113,10 @@ func auth(authLevel int, url *string, in map[string]interface{}, request *http.R
 		return allowManage(&token)
 	case DEPLOY:
 		projectToken := in["token"]
+		if projectToken == nil {
+			projectToken = request.Header.Get("X-Gitlab-Token")
+		}
+		logInfo("tokens", "inToken", in["token"], "gitToken", request.Header.Get("X-Gitlab-Token"), "projectToken", projectToken)
 		contextName := in["contextName"]
 		projectName := in["projectName"]
 		return allowDeploy(projectToken, contextName, projectName)
@@ -179,7 +184,13 @@ func allowDeploy(token, contextName, projectName interface{}) bool {
 				if tokenS != "" && contextNameS != "" && projectNameS != "" {
 					ctx := ContextInfo{}
 					_ = u.Load(contextFile(contextNameS), &ctx)
+					if ctx.Projects == nil {
+						return false
+					}
 					proj := ctx.Projects[projectNameS]
+					if proj == nil {
+						return false
+					}
 					return proj.Token == tokenS
 				}
 			}
