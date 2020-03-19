@@ -462,7 +462,7 @@ func build(in struct {
 	// zoneinfo for alpine
 	if len(ci.Deploy) > 0 {
 		if u.FileExists("/usr/share/zoneinfo") {
-			_ = der.Run("cp", "-r", "/usr/share/zoneinfo", buildPath)
+			_ = der.Run("cp", "-r", "/usr/share/zoneinfo", buildPath+".zoneinfo")
 		}
 	}
 
@@ -533,12 +533,12 @@ func build(in struct {
 func (der *Deployer) makeDockerBuildFile(buildScript string) string {
 	// 创建脚本
 	scripts := "cd " + projectContainerPath + "\n$(sh _getShell.sh) " + buildScript
-	err := u.WriteFile("_dockerBuild.sh", scripts)
+	err := u.WriteFile("._dockerBuild.sh", scripts)
 	if err != nil {
 		der.Error(err.Error())
 		return ""
 	}
-	return "_dockerBuild.sh"
+	return "._dockerBuild.sh"
 }
 
 func (der *Deployer) makeGetShellFile() string {
@@ -554,12 +554,12 @@ else
         echo /bin/sh
 fi
 `
-	err := u.WriteFile("_getShell.sh", scripts)
+	err := u.WriteFile("._getShell.sh", scripts)
 	if err != nil {
 		der.Error(err.Error())
 		return ""
 	}
-	return "_getShell.sh"
+	return "._getShell.sh"
 }
 
 func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *Deployer, stage string) string {
@@ -674,7 +674,7 @@ func makeScriptFile(vars map[string]string, i int, buildCommands []string, der *
 		}
 	}
 
-	buildFile := fmt.Sprintf("_%s%d.sh", stage, i)
+	buildFile := fmt.Sprintf("._%s%d.sh", stage, i)
 	der.Info("# make", buildFile)
 	err := u.WriteFile(buildFile, strings.Join(scripts, "\n"))
 	if err != nil {
