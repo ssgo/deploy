@@ -285,13 +285,13 @@ func build(in struct {
 		return
 	}
 
-	vars["PROJECT_NAME"] = in.Project.Name
-	vars["PROJECT_NAMESPACE"] = in.Project.Namespace
-	if vars["PROJECT_NAME"] == "" {
+	vars["GIT_PROJECT_NAME"] = in.Project.Name
+	vars["GIT_PROJECT_NAMESPACE"] = in.Project.Namespace
+	if vars["GIT_PROJECT_NAME"] == "" {
 		a := strings.Split(proj.Repository, "/")
 		if len(a) > 2 {
-			vars["PROJECT_NAMESPACE"] = a[len(a)-2]
-			vars["PROJECT_NAME"] = strings.Replace(a[len(a)-1], ".git", "", 1)
+			vars["GIT_PROJECT_NAMESPACE"] = a[len(a)-2]
+			vars["GIT_PROJECT_NAME"] = strings.Replace(a[len(a)-1], ".git", "", 1)
 		}
 	}
 
