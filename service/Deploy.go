@@ -195,10 +195,11 @@ func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (m
 	}
 
 	// 载入 CI
-	if proj.Repository == "" {
-		logger.Error("no repository")
-		return nil, nil, nil
-	}
+	//if proj.Repository == "" {
+	//
+	//	logger.Error("no repository")
+	//	return nil, nil, nil
+	//}
 
 	vars["CONTEXT"] = contextName
 	vars["PROJECT"] = projectName
@@ -240,6 +241,13 @@ func build(in struct {
 	Token       string
 	Tag         string
 	Ref         string
+	Repository  struct {
+		Git_ssh_url string
+	}
+	Project struct {
+		Name      string
+		Namespace string
+	}
 }, logger *log.Logger, response *s.Response, conn *websocket.Conn) {
 	der := Deployer{
 		logger:   logger,
@@ -264,6 +272,28 @@ func build(in struct {
 	}()
 
 	vars, proj, ci := loadDeployInfo(in.ContextName, in.ProjectName, in.Tag, logger)
+	if proj == nil {
+		return
+	}
+
+	if proj.Repository == "" {
+		// 尝试从 gitlab、github 的请求中获取仓库地址
+		proj.Repository = in.Repository.Git_ssh_url
+	}
+	if proj.Repository == "" {
+		logger.Error("no repository")
+		return
+	}
+
+	vars["PROJECT_NAME"] = in.Project.Name
+	vars["PROJECT_NAMESPACE"] = in.Project.Namespace
+	if vars["PROJECT_NAME"] == "" {
+		a := strings.Split(proj.Repository, "/")
+		if len(a) > 2 {
+			vars["PROJECT_NAMESPACE"] = a[len(a)-2]
+			vars["PROJECT_NAME"] = strings.Replace(a[len(a)-1], ".git", "", 1)
+		}
+	}
 
 	//cacheTagValue := strings.ReplaceAll(ci.CacheTag, "$CONTEXT", in.ContextName)
 	//cacheTagValue = strings.ReplaceAll(cacheTagValue, "$PROJECT", in.ProjectName)
@@ -677,7 +707,13 @@ func replaceVar(s, k, v string) string {
 		return s
 	}
 
-	return varRegexp.ReplaceAllString(s, v)
+	s = varRegexp.ReplaceAllString(s, v)
+
+	varRegexp2, err := regexp.Compile("(?i:\\${?" + k + "}?)")
+	if err != nil {
+		return s
+	}
+	return varRegexp2.ReplaceAllString(s, v)
 }
 
 func (der *Deployer) BuildBySSH(from, buildId, shellFile, buildFile string) bool {
