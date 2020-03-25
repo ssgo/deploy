@@ -17,6 +17,7 @@ type ProjectInfo struct {
 
 type CIBuild struct {
 	From   string
+	Cache  string
 	Script []string
 }
 
@@ -27,8 +28,8 @@ type CIDeploy struct {
 }
 
 type CI struct {
-	CacheTag string
-	Cache    string
+	//CacheTag string
+	//Cache    string
 	Build    []CIBuild
 	Deploy   []CIDeploy
 }

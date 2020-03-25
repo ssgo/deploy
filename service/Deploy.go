@@ -21,7 +21,7 @@ import (
 
 var gitLocks = map[string]*sync.Mutex{}
 
-var projectContainerPath = "/root"
+var projectContainerPath = "/build"
 
 func lock(name string) {
 	if gitLocks[name] == nil {
@@ -34,30 +34,41 @@ func unlock(name string) {
 	gitLocks[name].Unlock()
 }
 
+type getTagsOut struct {
+	Tags       []string
+	CustomTags string
+}
+
 func getTags(in struct {
 	ContextName string
 	ProjectName string
 	Clean       bool
-}, logger *log.Logger) []string {
-	outTags := make([]string, 1)
-	outTags[0] = "master"
+}, logger *log.Logger) getTagsOut {
+	out := getTagsOut{}
+	out.Tags = make([]string, 0)
 
 	ctx, proj := loadProject(in.ContextName, in.ProjectName, logger)
 	if ctx == nil || proj == nil {
-		return outTags
+		return out
 	}
 
-	lock(proj.Repository)
-	gitPath := checkout(proj.Repository, "master", true, in.Clean)
-	gitTags, err := u.RunCommand("git", "-C", gitPath, "tag", "-l", "--sort=-taggerdate")
-	unlock(proj.Repository)
+	var gitPath string
+	var gitTags []string
+	var err error
+	if proj.Repository != "" {
+		out.Tags = append(out.Tags, "master")
+		lock(proj.Repository)
+		gitPath = checkout(proj.Repository, "master", true, in.Clean, nil)
+		gitTags, err = u.RunCommand("git", "-C", gitPath, "tag", "-l", "--sort=-taggerdate")
+		unlock(proj.Repository)
+	}
 
 	if err != nil {
 		logger.Error(err.Error())
-		return outTags
+		return out
 	}
 
-	if gitPath != "" && len(outTags) > 0 {
+	if gitPath != "" && len(out.Tags) > 0 {
 		routs := make([]string, 0)
 		tagErr := ""
 		lenGitTags := len(gitTags)
@@ -78,12 +89,39 @@ func getTags(in struct {
 			routs = append(routs, gitTag)
 		}
 		if tagErr != "" {
-			logger.Error("outTags err:" + tagErr)
+			logger.Error("out.Tags err:" + tagErr)
 		}
-		outTags = append(outTags, routs...)
+		out.Tags = append(out.Tags, routs...)
 	}
 
-	return outTags
+	customTags := make([]string, 0)
+	u.Load(dataPath(in.ContextName, in.ProjectName, "custom_tags.json"), &customTags)
+	if len(customTags) > 0 {
+		out.Tags = append(out.Tags, customTags...)
+	}
+
+	out.CustomTags = strings.Join(customTags, ",")
+
+	return out
+}
+
+func saveCustomTags(in struct {
+	ContextName string
+	ProjectName string
+	CustomTags        string
+}, logger *log.Logger) bool {
+	tags := strings.Split(in.CustomTags, ",")
+	customTags := make([]string, 0)
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		logger.Info("1", "tag", tag)
+		if tag == "" {
+			continue
+		}
+		customTags = append(customTags, tag)
+	}
+	u.Save(dataPath(in.ContextName, in.ProjectName, "custom_tags.json"), customTags)
+	return true
 }
 
 func getHistoryMonths(in struct {
@@ -164,7 +202,7 @@ func update(in struct {
 	}
 
 	lock(proj.Repository)
-	gitPath := checkout(proj.Repository, "master", true, in.Clean)
+	gitPath := checkout(proj.Repository, "master", true, in.Clean, nil)
 	unlock(proj.Repository)
 
 	return gitPath != ""
@@ -194,13 +232,6 @@ func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (m
 		}
 	}
 
-	// 载入 CI
-	//if proj.Repository == "" {
-	//
-	//	logger.Error("no repository")
-	//	return nil, nil, nil
-	//}
-
 	vars["CONTEXT"] = contextName
 	vars["PROJECT"] = projectName
 	vars["TAG"] = tag
@@ -214,22 +245,11 @@ func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (m
 	for k, v := range vars {
 		ciStr = replaceVar(ciStr, k, v)
 	}
-	//for k, v := range vars {
-	//	ciStr = strings.ReplaceAll(ciStr, fmt.Sprintf("{$%s}", k), v)
-	//}
-	//for k, v := range vars {
-	//	ciStr = strings.ReplaceAll(ciStr, fmt.Sprintf("$%s", k), v)
-	//}
 
 	ci := LoadCI(ciStr)
 	if len(ci.Build) == 0 && len(ci.Deploy) == 0 {
 		logger.Error("no build and deploy")
 		return nil, nil, nil
-	}
-	if ci.CacheTag == "" {
-		ci.CacheTag = contextName + "-" + projectName
-	} else {
-		ci.CacheTag = strings.ReplaceAll(ci.CacheTag, "/", "-")
 	}
 
 	return vars, proj, &ci
@@ -249,6 +269,8 @@ func build(in struct {
 		Namespace string
 	}
 }, logger *log.Logger, response *s.Response, conn *websocket.Conn) {
+	startTime := time.Now()
+
 	der := Deployer{
 		logger:   logger,
 		response: response,
@@ -264,7 +286,9 @@ func build(in struct {
 	der.outs = make([]string, 0)
 	succeed := false
 	defer func() {
-		der.Output(u.StringIf(succeed, "# Done", "# Failed"))
+		endTime := time.Now()
+		der.Info("# End", endTime.Format("2006-01-02 15:04:05"), "Used:", endTime.Unix()-startTime.Unix())
+		der.Info(u.StringIf(succeed, "# Done", "# Failed"))
 		if conn != nil {
 			_ = conn.Close()
 		}
@@ -280,10 +304,6 @@ func build(in struct {
 		// 尝试从 gitlab、github 的请求中获取仓库地址
 		proj.Repository = in.Repository.Git_ssh_url
 	}
-	if proj.Repository == "" {
-		logger.Error("no repository")
-		return
-	}
 
 	vars["GIT_PROJECT_NAME"] = in.Project.Name
 	vars["GIT_PROJECT_NAMESPACE"] = in.Project.Namespace
@@ -298,6 +318,11 @@ func build(in struct {
 	//cacheTagValue := strings.ReplaceAll(ci.CacheTag, "$CONTEXT", in.ContextName)
 	//cacheTagValue = strings.ReplaceAll(cacheTagValue, "$PROJECT", in.ProjectName)
 	//cacheTagValue = strings.ReplaceAll(cacheTagValue, "$TAG", in.Tag)
+
+	der.Info("Project", in.ContextName+":"+in.ProjectName, "@", proj.Repository, proj.Desc)
+	der.Info("Script", u.JsonP(ci))
+	der.Info("Vars", u.JsonP(ci))
+	der.Info("# Start", startTime.Format("2006-01-02 15:04:05"))
 
 	//// 检查敏感内容
 	//if strings.Index(u.Json(vars)+u.Json(ci), ".poo_info_a") != -1 {
@@ -332,69 +357,41 @@ func build(in struct {
 	}
 
 	vars["BUILD_PATH"] = buildPath
-	lock(proj.Repository)
-	gitPath := checkout(proj.Repository, in.Tag, true, false)
-	der.Info("cp -r " + gitPath + "/* " + buildPath)
-	//err = der.Run("cp", "-r", path.Join(gitPath, "/*"), buildPath)
-	// exec.Command not support cp -r xxx/* xxxx
-	files, err := ioutil.ReadDir(gitPath)
-	if err == nil {
-		for _, file := range files {
-			fileName := file.Name()
-			if fileName == "." || fileName == ".." || fileName == ".git" {
-				continue
-			}
-			_, err = SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
-			if err != nil {
-				der.Error("cp -r failed", err.Error())
-				return
+
+	// 拉去代码
+	if proj.Repository != "" {
+		lock(proj.Repository)
+		gitPath := checkout(proj.Repository, in.Tag, true, false, nil)
+		//der.Info("cp -r " + gitPath + "/* " + buildPath)
+		//err = der.Run("cp", "-r", path.Join(gitPath, "/*"), buildPath)
+		// exec.Command not support cp -r xxx/* xxxx
+		files, err := ioutil.ReadDir(gitPath)
+		if err == nil {
+			for _, file := range files {
+				fileName := file.Name()
+				if fileName == "." || fileName == ".." || fileName == ".git" {
+					continue
+				}
+				_, err = SimpleRun("cp", "-r", path.Join(gitPath, fileName), buildPath)
+				if err != nil {
+					der.Error("cp -r failed", err.Error())
+					unlock(proj.Repository)
+					return
+				}
 			}
 		}
+		unlock(proj.Repository)
+		if err != nil {
+			return
+		}
 	}
-	unlock(proj.Repository)
-	if err != nil {
-		return
-	}
+
 	_ = os.Chdir(buildPath)
 
-	//// 克隆仓库
-	//if der.Run("git", "clone", proj.Repository, ".") != nil {
-	//	return
-	//}
-	//if proj.Tag != "" && der.Run("git", "checkout", proj.Tag) != nil {
-	//	return
-	//}
+	endTime := time.Now()
+	der.Info("# Git clone done", endTime.Format("2006-01-02 15:04:05"), "used", endTime.Unix()-startTime.Unix(), "seconds")
 	der.Info()
 	var mounts []string
-	// 初始化 cache
-	if ci.Cache != "" {
-		caches := strings.Split(ci.Cache, " ")
-		for _, cachePath := range caches {
-			if len(cachePath) == 0 {
-				continue
-			}
-			var cachedPath string
-			var singleCache string
-			if cachePath[0] != '/' {
-				singleCache = cachePath
-				cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
-				cachePath = fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, cachePath)
-			} else {
-				singleCache = cachePath[1:]
-				cachedPath = dataPath("_caches", ci.CacheTag, singleCache)
-			}
-			mounts = append(mounts, "-v", cachedPath+":"+projectContainerPath+"/"+singleCache)
-			if !u.FileExists(cachedPath) {
-				_ = os.MkdirAll(cachedPath, 0700)
-			}
-			if u.FileExists(cachePath) {
-				_ = os.RemoveAll(cachePath)
-			}
-			//ln made node_modules problem
-			//_ = der.Run("ln", "-s", cachedPath, cachePath)
-			//_ = der.Run("cp", "-r", cachedPath, cachePath)
-		}
-	}
 
 	shellFile := der.makeGetShellFile()
 	if shellFile == "" {
@@ -402,26 +399,6 @@ func build(in struct {
 	}
 
 	defer func() {
-		//if ci.Cache != "" {
-		//	caches := strings.Split(ci.Cache, " ")
-		//	for _, cachePath := range caches {
-		//		if len(cachePath) == 0 {
-		//			continue
-		//		}
-		//		var cachedPath string
-		//		if cachePath[0] != '/' {
-		//			cachedPath = dataPath("_caches", ci.CacheTag, cachePath)
-		//			cachePath = fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, cachePath)
-		//		} else {
-		//			cachedPath = dataPath("_caches", ci.CacheTag, cachePath[1:])
-		//		}
-		//		if u.FileExists(cachePath) {
-		//			_ = os.RemoveAll(cachedPath)
-		//			u.CheckPath(cachedPath)
-		//			_ = der.Run("cp", "-r", cachePath, cachedPath)
-		//		}
-		//	}
-		//}
 		if !_config.KeepBuildPath {
 			_ = os.RemoveAll(buildPath)
 		}
@@ -430,13 +407,56 @@ func build(in struct {
 	// 构建
 	for i, b := range ci.Build {
 		// 创建脚本
+		startTime := time.Now()
+		der.Info("# Build", i, "from", b.From, startTime.Format("2006-01-02 15:04:05"))
+
 		buildFile := makeScriptFile(vars, i, b.Script, &der, "build")
 		dockerBuildFile := der.makeDockerBuildFile(buildFile)
 		if buildFile == "" || dockerBuildFile == "" {
 			return
 		}
+
+		// 初始化 cache
+		cachedPaths := make([]string, 0)
+		cachePaths := make([]string, 0)
+		if b.Cache != "" {
+			caches := strings.Split(b.Cache, " ")
+			for _, cacheStr := range caches {
+				if cacheStr == "" {
+					continue
+				}
+
+				cachedPath := ""
+				cachePath := ""
+				if len(cacheStr) > 1 && cacheStr[0] == '^' {
+					if len(cacheStr) > 2 && cacheStr[1] == '^' {
+						cachePath = cacheStr[2:]
+						cachedPath = dataPath("_caches", strings.ReplaceAll(cacheStr, "/", "_"))
+					} else {
+						cachePath = cacheStr[1:]
+						cachedPath = dataPath("_caches", in.ContextName+"/"+strings.ReplaceAll(cachePath, "/", "_"))
+					}
+				} else {
+					cachePath = cacheStr
+					cachedPath = dataPath("_caches", in.ContextName+"-"+in.ProjectName+"/"+strings.ReplaceAll(cachePath, "/", "_"))
+				}
+				if !u.FileExists(cachedPath) {
+					_ = os.MkdirAll(cachedPath, 0700)
+				}
+				cachedPaths = append(cachedPaths, cachedPath)
+				cachePaths = append(cachePaths, cachePath)
+			}
+		}
+
 		if b.From == "" || b.From == "local" {
 			// 从本地构建
+			for cacheIndex := range cachePaths {
+				cacheTargetPath := fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, strings.ReplaceAll(cachePaths[cacheIndex], "/", "_"))
+				if !u.FileExists(cacheTargetPath) {
+					der.Run("ln", "-s", cachedPaths[cacheIndex], cacheTargetPath)
+				}
+			}
+
 			shell, err := SimpleRun("sh", shellFile)
 			if err != nil {
 				der.Error(err.Error())
@@ -447,27 +467,46 @@ func build(in struct {
 			}
 		} else if strings.IndexByte(b.From, '@') != -1 {
 			// 从远端构建
+			for cacheIndex := range cachePaths {
+				der.Run("cp", "-r", cachedPaths[cacheIndex], fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, strings.ReplaceAll(cachePaths[cacheIndex], "/", "_")))
+			}
 			if der.BuildBySSH(b.From, buildId, shellFile, buildFile) == false {
 				return
 			}
+			for cacheIndex := range cachePaths {
+				der.Run("cp", "-r", fmt.Sprintf("%s%c%s", buildPath, os.PathSeparator, strings.ReplaceAll(cachePaths[cacheIndex], "/", "_")), cachedPaths[cacheIndex])
+			}
 		} else {
 			// 从Docker构建
+			for cacheIndex := range cachePaths {
+				cacheTargetPath := cachePaths[cacheIndex]
+				if cachePaths[cacheIndex][0] != '/' {
+					cacheTargetPath = projectContainerPath + "/" + cachePaths[cacheIndex]
+				}
+				mounts = append(mounts, "-v", cachedPaths[cacheIndex]+":"+cacheTargetPath)
+			}
 			if !der.BuildByDocker(b.From, buildPath, dockerBuildFile, dataPath("_caches"), mounts) {
 				return
 			}
 		}
+
+		endTime := time.Now()
+		der.Info("# Build", i, "done", endTime.Format("2006-01-02 15:04:05"), "used", endTime.Unix()-startTime.Unix(), "seconds")
 		der.Info()
 	}
 
 	// zoneinfo for alpine
 	if len(ci.Deploy) > 0 {
 		if u.FileExists("/usr/share/zoneinfo") {
-			_ = der.Run("cp", "-r", "/usr/share/zoneinfo", buildPath+".zoneinfo")
+			_ = der.Run("cp", "-r", "/usr/share/zoneinfo", path.Join(buildPath, ".zoneinfo"))
 		}
 	}
 
 	// 部署
 	for i, d := range ci.Deploy {
+		startTime := time.Now()
+		der.Info("# Deploy", i, "from", d.From, startTime.Format("2006-01-02 15:04:05"))
+
 		// 创建 Dockerfile
 		if len(d.Dockerfile) > 0 {
 			err := u.WriteFile("Dockerfile", strings.Join(d.Dockerfile, "\n"))
@@ -513,10 +552,72 @@ func build(in struct {
 			}
 		}
 
+		endTime := time.Now()
+		der.Info("# Deploy", i, "done", endTime.Format("2006-01-02 15:04:05"), "used", endTime.Unix()-startTime.Unix(), "seconds")
 		der.Info()
 	}
 
 	succeed = true
+}
+
+func checkout(repository, tag string, pull bool, clean bool, der *Deployer) string {
+	if tag == "" {
+		tag = "master"
+	}
+	fixedRepository := repositoryNameRegex.ReplaceAllString(repository, "_")
+	gitPath := dataPath("_repositories", fixedRepository)
+	if clean {
+		_ = os.RemoveAll(gitPath)
+	}
+	err := os.MkdirAll(gitPath, 0700)
+	//if err == nil {
+	//	err = os.Chdir(gitPath)
+	//}
+	if err != nil {
+		if der != nil {
+			der.Error(err.Error())
+		} else {
+			logger.Error(err.Error())
+		}
+		return ""
+	}
+
+	if u.FileExists(path.Join(gitPath, ".git")) {
+		if der != nil {
+			der.Info("git checkout "+tag, "repository", repository, "tag", tag)
+		} else {
+			logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
+		}
+		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
+		if pull {
+			if der != nil {
+				der.Info("git pull", "repository", repository, "tag", tag)
+			} else {
+				logger.Info("git pull", "repository", repository, "tag", tag)
+			}
+			_, err = u.RunCommand("git", "-C", gitPath, "pull")
+			_, err = u.RunCommand("git", "-C", gitPath, "fetch -t -p -f")
+		}
+	} else {
+		if der != nil {
+			der.Info("git pull", "repository", repository, "tag", tag)
+			der.Info("git checkout "+tag, "repository", repository, "tag", tag)
+		} else {
+			logger.Info("git clone "+repository+" .", "repository", repository, "tag", tag)
+			logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
+		}
+		_, err = u.RunCommand("git", "-C", gitPath, "clone", repository, ".")
+		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
+	}
+	if err != nil {
+		if der != nil {
+			der.Error(err.Error())
+		} else {
+			logger.Error(err.Error())
+		}
+		return ""
+	}
+	return gitPath
 }
 
 //func (der *Deployer) makeSSHBuildFile(buildId, buildScript string) string {
@@ -532,7 +633,7 @@ func build(in struct {
 
 func (der *Deployer) makeDockerBuildFile(buildScript string) string {
 	// 创建脚本
-	scripts := "cd " + projectContainerPath + "\n$(sh _getShell.sh) " + buildScript
+	scripts := "cd " + projectContainerPath + "\n$(sh ._getShell.sh) " + buildScript
 	err := u.WriteFile("._dockerBuild.sh", scripts)
 	if err != nil {
 		der.Error(err.Error())
@@ -793,7 +894,7 @@ func (der *Deployer) Output(str string) {
 
 func (der *Deployer) Run(command string, args ...string) error {
 	printCmd := fmt.Sprintln("#", command, strings.Join(args, " "))
-	if command == "ssh" || command == "scp" {
+	if command == "ssh" || command == "scp" || command == "rsync" {
 		printCmd = strings.ReplaceAll(printCmd, dataPath(".ssh", "id_ecdsa"), "****")
 	}
 	der.Output(printCmd)

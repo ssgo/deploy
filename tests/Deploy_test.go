@@ -15,7 +15,8 @@ import (
 )
 
 var as2 *s.AsyncServer
-var deployDataPath = os.TempDir() + "data2"
+//var deployDataPath = os.TempDir() + "data2"
+var deployDataPath = "/opt/deploy2"
 var decryptorFile = ""
 
 func TestDeployStart(t *testing.T) {
@@ -81,10 +82,9 @@ func TestInitCI(t *testing.T) {
 	}, "Access-Token", service.EncodeToken("91deploy"))
 
 	yml1 := `
-cachetag: $CONTEXT
-cache: abc cache node_modules
 build:
  - from: local
+   cache: abc ^cache ^^/tmp/cache
    script:
      - mkdir -p dist
      - mkdir -p cache
@@ -95,11 +95,19 @@ build:
      - test "$(cat cache/stars)" = $check1
      - cp cache/stars dist/stars
 
- - from: local # docker@192.168.0.61
+ - from: local
+   cache: abc ^cache ^^/tmp/cache
    script:
      - echo -n "$flag" >> cache/stars
      - test "$(cat cache/stars)" = $check2
      - cp cache/stars dist/stars
+
+ - from: local
+   cache: abc ^cache ^^/tmp/cache
+   script:
+     - echo -n "!!!" >> cache/stars2
+     - echo "$(cat dist/abc.txt)" = {$checkABC}
+     - test "$(cat dist/abc.txt)" = $checkABC
 
 deploy:
  from: local
@@ -113,9 +121,6 @@ deploy:
    - HEALTHCHECK --interval=10s --timeout=3s CMD /opt/server check
  script:
    - cp dist/stars dist/stars2
-   - echo -n "!!!" >> cache/stars2
-   - echo "$(cat dist/abc.txt)" = {$checkABC}
-   - test "$(cat dist/abc.txt)" = $checkABC
 `
 	_ = as2.Post("/ci/c1/p1", s.Map{"ci": yml1}, "Access-Token", service.EncodeToken("C1TTT"))
 
@@ -177,5 +182,5 @@ func TestDeploy(t *testing.T) {
 
 func TestDeployEnd(t *testing.T) {
 	as2.Stop()
-	_ = os.RemoveAll(deployDataPath)
+	//_ = os.RemoveAll(deployDataPath)
 }

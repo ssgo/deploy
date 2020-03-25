@@ -35,7 +35,7 @@ ContextView.prototype.showTagWindow = function (projIndex) {
         tagWindowShowing: true,
         buildProject: proj.name,
         buildProjectIndex: projIndex,
-        tags: ['master'],
+        tags: [],
     })
     this.refreshTags(proj.name, false)
 }
@@ -48,47 +48,46 @@ ContextView.prototype.hideTagWindow = function () {
 
 ContextView.prototype.refreshTags = function (projectName, clean) {
     var that = this
-    if(clean) {
-        if(!confirm("Fix tags will remove project "+projectName+" and take some time to clone the code again.Are you sure to fix?")) {
+    if (clean) {
+        if (!confirm("Fix tags will remove project " + projectName + " and take some time to clone the code again.Are you sure to fix?")) {
             return
         }
     }
-    optTagsText = (clean === true?"fixTags":"refreshTags")
+    optTagsText = (clean === true ? "fixTags" : "refreshTags")
     opsTags = document.getElementById(optTagsText)
-    if(!opsTags) {
+    if (!opsTags) {
         http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
-            that.setData({tags: data})
+            that.setData({tags: data.tags, customTags: data.customTags})
         })
         return
     }
     waitText = "Please Wait"
-    if(opsTags.innerText == waitText) {
+    if (opsTags.innerText == waitText) {
         alert(waitText);
         return
     }
     var oText = opsTags.innerText
     opsTags.innerText = waitText
     http.get('/tags/' + this.name + '/' + projectName + '?clean=' + clean).then(function (data) {
-        that.setData({tags: data})
+        that.setData({tags: data.tags, customTags: data.customTags})
         opsTags.innerText = oText
     })
 }
 
 
-
 ContextView.prototype.build = function (projIndex, tag) {
     var proj = this.data.projects[projIndex]
     var that = this
-    if(tag == "master"){
+    if (tag == "master") {
         tag = prompt("Please enter a tag")
-        if(!tag){
+        if (!tag) {
             return;
         }
         tag = tag.trim()
-        if(tag.length==0) {
+        if (tag.length == 0) {
             return
         }
-        tag = "_"+tag
+        tag = "_" + tag
     }
     var ws = new WebSocket('ws://' + location.host + '/ws-build/' + that.name + '/' + proj.name + '/' + tag + '?token=' + proj.token);
     ws.onmessage = function (evt) {
@@ -97,6 +96,23 @@ ContextView.prototype.build = function (projIndex, tag) {
     // ws.onclose = function () {
     //     this.building = false
     // };
+}
+
+ContextView.prototype.setCustomTags = function (projectName) {
+    customTags = prompt("custom tags split by , for example: 0.1,0.2,0.3", this.data.customTags)
+    if (!customTags) {
+        return;
+    }
+
+    var that = this
+    http.post('/tags/' + this.name + '/' + projectName, {customTags: customTags}).then(function (data) {
+        if (data === true) {
+            alert('custom tags saved')
+            that.refreshTags(projectName, false)
+        } else {
+            alert('failed to save custom tags for ' + that.data.ciProject)
+        }
+    })
 }
 
 ContextView.prototype.output = function (str) {

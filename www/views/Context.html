@@ -160,19 +160,23 @@
 	 style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;background:rgba(0,0,0,0.5);z-index:2000">
 	<div style="position: absolute;top: 50px;bottom: 50px;left: 50px;right: 50px;background: #fff;border: 1px solid #eee;border-radius: 10px;">
 		<ul class="list-group"
-			style="position: absolute;top: 10px;bottom: 80px;left: 10px;width: 160px;overflow: hidden;overflow-y: auto;margin: 0;">
+			style="position: absolute;top: 10px;background: #f1f1f1;bottom: 120px;left: 10px;width: 160px;overflow: hidden;overflow-y: auto;margin: 0;">
 			<li each="data.tags" class="list-group-item">{item}<a
 						href="javascript:$this.build('{data.buildProjectIndex}', '{item}');"
 						class="glyphicon glyphicon-play"
 						style="float: right"></a></li>
 		</ul>
+		<button class="btn btn-default" onclick="$this.setCustomTags('{data.buildProject}')"
+				style="position: absolute;bottom: 85px;left: 10px;width: 160px;height: 30px"><span
+					class="glyphicon glyphicon-wrench"></span> <span id="refreshTags">Custom Tags</span>
+		</button>
 		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', false)"
 				style="position: absolute;bottom: 50px;left: 10px;width: 160px;height: 30px"><span
-					class="glyphicon glyphicon-refresh "></span> <span id="refreshTags">Refresh Tags</span>
+					class="glyphicon glyphicon-refresh"></span> <span id="refreshTags">Refresh Tags</span>
 		</button>
 		<button class="btn btn-default" onclick="$this.refreshTags('{data.buildProject}', true)"
 				style="position: absolute;bottom: 15px;left: 10px;width: 160px;height: 30px"><span
-					class="glyphicon glyphicon-refresh "></span> <span id="fixTags">Fix Tags</span>
+					class="glyphicon glyphicon-refresh"></span> <span id="fixTags">Fix Tags</span>
 		</button>
 		<div style="position: absolute;top: 10px;bottom: 50px;left: 180px;right: 10px;">
 					<textarea class="buildOutput" readonly
@@ -195,7 +199,8 @@
 				{data.currentMonth} <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" style="top:40px; left: 10px;">
-				<li each="data.buildMonths" onclick="$this.clickMonth('{data.currentProjectName}', '{item}')"><a href="#">{item}</a></li>
+				<li each="data.buildMonths" onclick="$this.clickMonth('{data.currentProjectName}', '{item}')"><a
+							href="#">{item}</a></li>
 			</ul>
 		</div>
 		<ul class="list-group historiesList"

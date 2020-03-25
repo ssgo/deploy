@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -141,45 +140,6 @@ func loadProject(contextName, projectName string, logger *log.Logger) (*ContextI
 	// 载入 ProjectInfo
 	proj := ctx.Projects[projectName]
 	return &ctx, proj
-}
-
-func checkout(repository, tag string, pull bool, clean bool) string {
-	if tag == "" {
-		tag = "master"
-	}
-	fixedRepository := repositoryNameRegex.ReplaceAllString(repository, "_")
-	gitPath := dataPath("_repositories", fixedRepository)
-	if clean {
-		_ = os.RemoveAll(gitPath)
-	}
-	err := os.MkdirAll(gitPath, 0700)
-	//if err == nil {
-	//	err = os.Chdir(gitPath)
-	//}
-	if err != nil {
-		logger.Error(err.Error())
-		return ""
-	}
-
-	if u.FileExists(path.Join(gitPath, ".git")) {
-		logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
-		if pull {
-			logger.Info("git pull", "repository", repository, "tag", tag)
-			_, err = u.RunCommand("git", "-C", gitPath, "pull")
-			_, err = u.RunCommand("git", "-C", gitPath, "fetch -t -p -f")
-		}
-	} else {
-		logger.Info("git clone "+repository+" .", "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "-C", gitPath, "clone", repository, ".")
-		logger.Info("git checkout "+tag, "repository", repository, "tag", tag)
-		_, err = u.RunCommand("git", "-C", gitPath, "checkout", tag)
-	}
-	if err != nil {
-		logger.Error(err.Error())
-		return ""
-	}
-	return gitPath
 }
 
 func contextPath(context string) string {

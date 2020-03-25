@@ -43,6 +43,7 @@ func Init() {
 
 	s.Restful(VIEW, "GET", "/ci/{contextName}/{projectName}", getCI)
 	s.Restful(VIEW, "GET", "/tags/{contextName}/{projectName}", getTags)
+	s.Restful(VIEW, "POST", "/tags/{contextName}/{projectName}", saveCustomTags)
 	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}", getHistoryMonths)
 	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}/{month}", getHistoryBuilds)
 	s.Restful(VIEW, "GET", "/history/{contextName}/{projectName}/{build}", getHistoryBuild)
@@ -269,7 +270,7 @@ func checkTags() {
 
 				logger.Info("updating", "context", contextName, "project", projectName, "repository", proj.Repository)
 				lock(proj.Repository)
-				checkout(proj.Repository, "master", true, false)
+				checkout(proj.Repository, "master", true, false, nil)
 				unlock(proj.Repository)
 				logger.Info("updated", "context", contextName, "project", projectName, "repository", proj.Repository)
 			}
