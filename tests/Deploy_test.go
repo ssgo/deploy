@@ -90,16 +90,16 @@ build:
      - mkdir -p cache
      - cp abc.txt dist/
      - sskey-go:aaa echo 'go build'
-     - echo -n "$globalTitle" >> cache/stars
-     - echo $(cat cache/stars) = $check1
-     - test "$(cat cache/stars)" = $check1
+     - echo -n "${globalTitle}" >> cache/stars
+     - echo $(cat cache/stars) = ${check1}
+     - test "$(cat cache/stars)" = ${check1}
      - cp cache/stars dist/stars
 
  - from: local
    cache: abc ^cache ^^/tmp/cache
    script:
-     - echo -n "$flag" >> cache/stars
-     - test "$(cat cache/stars)" = $check2
+     - echo -n "${flag}" >> cache/stars
+     - test "$(cat cache/stars)" = ${check2}
      - cp cache/stars dist/stars
 
  - from: local
@@ -107,7 +107,7 @@ build:
    script:
      - echo -n "!!!" >> cache/stars2
      - echo "$(cat dist/abc.txt)" = {$checkABC}
-     - test "$(cat dist/abc.txt)" = $checkABC
+     - test "$(cat dist/abc.txt)" = {$checkABC}
 
 deploy:
  from: local

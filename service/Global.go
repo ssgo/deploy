@@ -85,18 +85,14 @@ func getCacheList(logger *log.Logger) []CacheInfo {
 }
 
 func countDir(path string, n *int, size *int64, logger *log.Logger) {
-	fmt.Println("  =====!!!!", path)
 	files, err := ioutil.ReadDir(path)
 	if err == nil {
 		for _, file := range files {
 			fileName := file.Name()
-			fmt.Println("  =====", fileName)
 			if fileName != "." && fileName != ".." {
-				fmt.Println("  =====;;;;;;;", file.IsDir(), file)
 				if file.IsDir() {
 					countDir(fmt.Sprintf("%s%c%s", path, os.PathSeparator, fileName), n, size, logger)
 				} else {
-					fmt.Println("  =====>>", file)
 					*n++
 					*size += file.Size()
 				}

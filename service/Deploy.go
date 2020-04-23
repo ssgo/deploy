@@ -803,14 +803,13 @@ func (der *Deployer) Error(args ...interface{}) {
 }
 
 func replaceVar(s, k, v string) string {
-	varRegexp, err := regexp.Compile("(?i:{?\\$" + k + "}?)")
+	varRegexp, err := regexp.Compile("(?i:{\\$" + k + "})")
 	if err != nil {
 		return s
 	}
-
 	s = varRegexp.ReplaceAllString(s, v)
 
-	varRegexp2, err := regexp.Compile("(?i:\\${?" + k + "}?)")
+	varRegexp2, err := regexp.Compile("(?i:\\${" + k + "})")
 	if err != nil {
 		return s
 	}
