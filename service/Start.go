@@ -101,7 +101,7 @@ func Init() {
 	go startChecker()
 }
 
-func auth(authLevel int, url *string, in map[string]interface{}, request *http.Request) bool {
+func auth(authLevel int, url *string, in map[string]interface{}, request *http.Request, response *s.Response) bool {
 	token := request.Header.Get("Access-Token")
 	switch authLevel {
 	//case VIEW:
