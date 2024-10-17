@@ -9,7 +9,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	s, _ := u.ReadFile("succeed.yml", 1024)
+	s, _ := u.ReadFile("succeed.yml")
 	ci := service.LoadCI(s)
 	if len(ci.Build) == 0 || ci.Build[0].From != "local" {
 		t.Fatal("Build config read failed")

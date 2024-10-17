@@ -30,8 +30,8 @@ type CIDeploy struct {
 type CI struct {
 	//CacheTag string
 	//Cache    string
-	Build    []CIBuild
-	Deploy   []CIDeploy
+	Build  []CIBuild
+	Deploy []CIDeploy
 }
 
 //func getProjects(in struct{ ContextName string }, logger *log.Logger) []ProjectInfo {
@@ -97,7 +97,7 @@ type CI struct {
 //}
 
 func getCI(in struct{ ContextName, ProjectName string }, logger *log.Logger) string {
-	s, err := u.ReadFile(ciFile(in.ContextName, in.ProjectName), 2048000)
+	s, err := u.ReadFile(ciFile(in.ContextName, in.ProjectName))
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -138,7 +138,7 @@ func setCI(in struct {
 }
 
 func LoadCIFile(fileName string) CI {
-	s, err := u.ReadFile(fileName, 204800)
+	s, err := u.ReadFile(fileName)
 	if err != nil {
 		logError(err.Error())
 		return CI{}

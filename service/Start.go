@@ -2,9 +2,9 @@ package service
 
 import (
 	"github.com/ssgo/config"
+	"github.com/ssgo/log"
 	"github.com/ssgo/s"
 	"github.com/ssgo/u"
-	"net/http"
 	"os"
 	"path"
 	"time"
@@ -26,34 +26,34 @@ func Init() {
 
 	s.SetAuthChecker(auth)
 	s.Static("/", "www/")
-	s.Restful(GUEST, "POST", "/login", login)
+	s.Restful(GUEST, "POST", "/login", login, "")
 
-	s.Restful(VIEW, "GET", "/global", getGlobalInfo)
-	s.Restful(MANAGE, "POST", "/global", setGlobalInfo)
+	s.Restful(VIEW, "GET", "/global", getGlobalInfo, "")
+	s.Restful(MANAGE, "POST", "/global", setGlobalInfo, "")
 
-	s.Restful(SYNCSSKEYS, "POST", "/sskeys/{token}", setSSKeys)
+	s.Restful(SYNCSSKEYS, "POST", "/sskeys/{token}", setSSKeys, "")
 
-	s.Restful(VIEW, "GET", "/caches", getCacheList)
-	s.Restful(MANAGE, "DELETE", "/cache/{cacheName}", removeCache)
+	s.Restful(VIEW, "GET", "/caches", getCacheList, "")
+	s.Restful(MANAGE, "DELETE", "/cache/{cacheName}", removeCache, "")
 
-	s.Restful(VIEW, "GET", "/contexts", getContexts)
-	s.Restful(VIEW, "GET", "/context/{contextName}", getContext)
-	s.Restful(CONTEXT, "POST", "/context/{contextName}", setContext)
-	s.Restful(MANAGE, "DELETE", "/context/{contextName}", removeContext)
+	s.Restful(VIEW, "GET", "/contexts", getContexts, "")
+	s.Restful(VIEW, "GET", "/context/{contextName}", getContext, "")
+	s.Restful(CONTEXT, "POST", "/context/{contextName}", setContext, "")
+	s.Restful(MANAGE, "DELETE", "/context/{contextName}", removeContext, "")
 
-	s.Restful(VIEW, "GET", "/ci/{contextName}/{projectName}", getCI)
-	s.Restful(VIEW, "GET", "/tags/{contextName}/{projectName}", getTags)
-	s.Restful(VIEW, "POST", "/tags/{contextName}/{projectName}", saveCustomTags)
-	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}", getHistoryMonths)
-	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}/{month}", getHistoryBuilds)
-	s.Restful(VIEW, "GET", "/history/{contextName}/{projectName}/{build}", getHistoryBuild)
-	s.Restful(CONTEXT, "POST", "/ci/{contextName}/{projectName}", setCI)
-	s.Register(DEPLOY, "/build/{contextName}/{projectName}", build)
-	s.Register(DEPLOY, "/build/{contextName}/{projectName}/{tag}", build)
-	s.Register(DEPLOY, "/update/{contextName}/{projectName}", update)
+	s.Restful(VIEW, "GET", "/ci/{contextName}/{projectName}", getCI, "")
+	s.Restful(VIEW, "GET", "/tags/{contextName}/{projectName}", getTags, "")
+	s.Restful(VIEW, "POST", "/tags/{contextName}/{projectName}", saveCustomTags, "")
+	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}", getHistoryMonths, "")
+	s.Restful(VIEW, "GET", "/histories/{contextName}/{projectName}/{month}", getHistoryBuilds, "")
+	s.Restful(VIEW, "GET", "/history/{contextName}/{projectName}/{build}", getHistoryBuild, "")
+	s.Restful(CONTEXT, "POST", "/ci/{contextName}/{projectName}", setCI, "")
+	s.Register(DEPLOY, "/build/{contextName}/{projectName}", build, "")
+	s.Register(DEPLOY, "/build/{contextName}/{projectName}/{tag}", build, "")
+	s.Register(DEPLOY, "/update/{contextName}/{projectName}", update, "")
 
-	s.RegisterWebsocket(DEPLOY, "/ws-build/{contextName}/{projectName}", nil, build, nil, nil, nil)
-	s.RegisterWebsocket(DEPLOY, "/ws-build/{contextName}/{projectName}/{tag}", nil, build, nil, nil, nil)
+	s.RegisterWebsocket(DEPLOY, "/ws-build/{contextName}/{projectName}", nil, build, nil, nil, nil, "")
+	s.RegisterWebsocket(DEPLOY, "/ws-build/{contextName}/{projectName}/{tag}", nil, build, nil, nil, nil, "")
 
 	errs := config.LoadConfig("deploy", &_config)
 	if errs != nil && len(errs) > 0 {
@@ -101,17 +101,17 @@ func Init() {
 	go startChecker()
 }
 
-func auth(authLevel int, url *string, in map[string]interface{}, request *http.Request, response *s.Response) bool {
+func auth(authLevel int, logger *log.Logger, url *string, in map[string]interface{}, request *s.Request, response *s.Response, options *s.WebServiceOptions) (pass bool, object any) {
 	token := request.Header.Get("Access-Token")
 	switch authLevel {
 	//case VIEW:
 	//	return allowAccess(&token) || allowManage(&token) || allowContext(&token, in["contextName"])
 	case VIEW:
-		return allowManage(&token) || allowAnyContext(&token)
+		return allowManage(&token) || allowAnyContext(&token), nil
 	case CONTEXT:
-		return allowManage(&token) || allowContext(&token, in["contextName"])
+		return allowManage(&token) || allowContext(&token, in["contextName"]), nil
 	case MANAGE:
-		return allowManage(&token)
+		return allowManage(&token), nil
 	case DEPLOY:
 		projectToken := in["token"]
 		if projectToken == nil {
@@ -120,12 +120,12 @@ func auth(authLevel int, url *string, in map[string]interface{}, request *http.R
 		logInfo("tokens", "inToken", in["token"], "gitToken", request.Header.Get("X-Gitlab-Token"), "projectToken", projectToken)
 		contextName := in["contextName"]
 		projectName := in["projectName"]
-		return allowDeploy(projectToken, contextName, projectName)
+		return allowDeploy(projectToken, contextName, projectName), nil
 	case SYNCSSKEYS:
 		sskeyToken := in["token"]
-		return allowSyncSSKeys(sskeyToken)
+		return allowSyncSSKeys(sskeyToken), nil
 	}
-	return false
+	return false, nil
 }
 
 //func allowAccess(token *string) bool {

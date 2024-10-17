@@ -108,7 +108,7 @@ func getTags(in struct {
 func saveCustomTags(in struct {
 	ContextName string
 	ProjectName string
-	CustomTags        string
+	CustomTags  string
 }, logger *log.Logger) bool {
 	tags := strings.Split(in.CustomTags, ",")
 	customTags := make([]string, 0)
@@ -184,7 +184,7 @@ func getHistoryBuild(in struct {
 		return ""
 	}
 
-	str, err := u.ReadFile(dataPath(in.ContextName, in.ProjectName, "builds", in.Build[0:7], in.Build), 2048000)
+	str, err := u.ReadFile(dataPath(in.ContextName, in.ProjectName, "builds", in.Build[0:7], in.Build))
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -236,7 +236,7 @@ func loadDeployInfo(contextName, projectName, tag string, logger *log.Logger) (m
 	vars["PROJECT"] = projectName
 	vars["TAG"] = tag
 
-	ciStr, err := u.ReadFile(ciFile(contextName, projectName), 1024000)
+	ciStr, err := u.ReadFile(ciFile(contextName, projectName))
 	if err != nil {
 		logger.Error(err.Error())
 		return nil, nil, nil
